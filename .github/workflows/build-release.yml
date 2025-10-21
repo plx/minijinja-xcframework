@@ -1,0 +1,148 @@
+name: Build and Release XCFramework
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'minijinja version to build (without v prefix)'
+        required: true
+        type: string
+  schedule:
+    # Check for new releases daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      should-build: ${{ steps.check.outputs.should-build }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for new minijinja release
+        id: check
+        run: |
+          # Get latest minijinja release
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/mitsuhiko/minijinja/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          
+          # Check if we already have this release
+          if git ls-remote --tags origin | grep -q "v$LATEST_RELEASE"; then
+            echo "Release v$LATEST_RELEASE already exists"
+            echo "should-build=false" >> $GITHUB_OUTPUT
+          else
+            echo "New release found: v$LATEST_RELEASE"
+            echo "should-build=true" >> $GITHUB_OUTPUT
+            echo "version=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Override for manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "should-build=true" >> $GITHUB_OUTPUT
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+
+  build-xcframework:
+    needs: check-release
+    if: needs.check-release.outputs.should-build == 'true' || github.event_name == 'push'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: |
+            # iOS
+            aarch64-apple-ios
+            x86_64-apple-ios
+            aarch64-apple-ios-sim
+
+            # Catalyst
+            aarch64-apple-ios-macabi
+            x86_64-apple-ios-macabi
+
+            # tvOS
+            aarch64-apple-tvos
+            x86_64-apple-tvos
+            aarch64-apple-tvos-sim
+
+            # watchOS
+            aarch64-apple-watchos
+            aarch64-apple-watchos-sim
+            x86_64-apple-watchos-sim
+
+            # macOS
+            aarch64-apple-darwin
+            x86_64-apple-darwin
+
+            # visionOS
+            aarch64-apple-visionos
+            aarch64-apple-visionos-sim
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Extract version from tag
+            VERSION=${GITHUB_REF#refs/tags/v}
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ needs.check-release.outputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Build XCFramework
+        run: |
+          chmod +x scripts/build-xcframework.sh
+          ./scripts/build-xcframework.sh ${{ steps.version.outputs.version }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcframework
+          path: output/minijinja.xcframework.zip
+      
+      - name: Calculate checksum
+        id: checksum
+        run: |
+          cd output
+          CHECKSUM=$(swift package compute-checksum minijinja.xcframework.zip)
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "Checksum: $CHECKSUM"
+      
+      - name: Create Release
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.version != 'main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: minijinja XCFramework v${{ steps.version.outputs.version }}
+          body: |
+            ## minijinja XCFramework v${{ steps.version.outputs.version }}
+            
+            This release packages [minijinja v${{ steps.version.outputs.version }}](https://github.com/mitsuhiko/minijinja/releases/tag/v${{ steps.version.outputs.version }}) as an XCFramework.
+            
+            ### Installation
+            
+            Add to your `Package.swift`:
+            
+            ```swift
+            .binaryTarget(
+                name: "minijinja",
+                url: "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/minijinja.xcframework.zip",
+                checksum: "${{ steps.checksum.outputs.checksum }}"
+            )
+            ```
+            
+            ### Supported Platforms
+            - iOS 26.0+ (arm64, arm64 & x86_64 simulators)
+            - macOS 26.0+ (arm64, x86_64)
+            - tvOS 26.0+ (arm64, arm64 & x86_64 simulators)
+            - watchOS 26.0+ (arm64, arm64 & x86_64 simulators)
+            - visionOS 26.0+ (arm64, arm64 simulator)
+          files: output/minijinja.xcframework.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
