@@ -1,0 +1,88 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    # Check for new releases every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Check for new minijinja releases
+        id: check
+        run: |
+          # Get all minijinja releases
+          MINIJINJA_RELEASES=$(curl -s https://api.github.com/repos/mitsuhiko/minijinja/releases | jq -r '.[].tag_name' | head -20)
+          
+          # Get our releases
+          OUR_RELEASES=$(git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | grep '^v' || true)
+          
+          # Find missing releases
+          MISSING_RELEASES=""
+          for release in $MINIJINJA_RELEASES; do
+            if ! echo "$OUR_RELEASES" | grep -q "^$release$"; then
+              MISSING_RELEASES="$MISSING_RELEASES $release"
+            fi
+          done
+          
+          if [ -z "$MISSING_RELEASES" ]; then
+            echo "✅ No new releases found"
+            echo "has-missing=false" >> $GITHUB_OUTPUT
+          else
+            echo "📦 Missing releases found: $MISSING_RELEASES"
+            echo "has-missing=true" >> $GITHUB_OUTPUT
+            echo "missing-releases=$MISSING_RELEASES" >> $GITHUB_OUTPUT
+            
+            # Get the most recent missing release
+            LATEST_MISSING=$(echo $MISSING_RELEASES | tr ' ' '\n' | sort -V | tail -1)
+            echo "latest-missing=$LATEST_MISSING" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Trigger build for latest missing release
+        if: steps.check.outputs.has-missing == 'true'
+        run: |
+          # Create a new tag to trigger the build workflow
+          LATEST_VERSION=${{ steps.check.outputs.latest-missing }}
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push tag
+          git tag -a "$LATEST_VERSION" -m "Auto-sync: Build minijinja $LATEST_VERSION"
+          git push origin "$LATEST_VERSION"
+          
+          echo "🚀 Triggered build for $LATEST_VERSION"
+      
+      - name: Create issue for multiple missing releases
+        if: steps.check.outputs.has-missing == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const missingReleases = '${{ steps.check.outputs.missing-releases }}'.trim().split(' ');
+            
+            if (missingReleases.length > 1) {
+              // Check if issue already exists
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'upstream-sync'
+              });
+              
+              if (issues.data.length === 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: 'Multiple minijinja releases pending',
+                  body: `The following minijinja releases are missing XCFramework builds:\n\n${missingReleases.map(r => `- ${r}`).join('\n')}\n\nThe most recent release (${missingReleases[missingReleases.length - 1]}) has been automatically queued for building. You may want to manually trigger builds for the other versions if needed.`,
+                  labels: ['upstream-sync']
+                });
+              }
+            }
