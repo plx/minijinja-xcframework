@@ -139,10 +139,15 @@ jobs:
             ```
             
             ### Supported Platforms
-            - iOS 26.0+ (arm64, arm64 & x86_64 simulators)
-            - macOS 26.0+ (arm64, x86_64)
-            - tvOS 26.0+ (arm64, arm64 & x86_64 simulators)
-            - watchOS 26.0+ (arm64, arm64 & x86_64 simulators)
-            - visionOS 26.0+ (arm64, arm64 simulator)
+            - iOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
+            - macOS 26.0+ (universal arm64/x86_64)
+            - Mac Catalyst 26.0+ (universal arm64/x86_64)
+            - tvOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
+            - watchOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
+            - visionOS 26.0+ (arm64 device, arm64 simulator)
+
+            ### Features
+            - Static library linking for optimal binary size
+            - Debug symbols (dSYMs) embedded in XCFramework for crash symbolication
           files: output/minijinja.xcframework.zip
           token: ${{ secrets.GITHUB_TOKEN }}
