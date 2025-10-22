@@ -54,35 +54,10 @@ jobs:
       
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: |
-            # iOS
-            aarch64-apple-ios
-            x86_64-apple-ios
-            aarch64-apple-ios-sim
 
-            # Catalyst
-            aarch64-apple-ios-macabi
-            x86_64-apple-ios-macabi
+      - name: Install just
+        uses: extractions/setup-just@v2
 
-            # tvOS
-            aarch64-apple-tvos
-            x86_64-apple-tvos
-            aarch64-apple-tvos-sim
-
-            # watchOS
-            aarch64-apple-watchos
-            aarch64-apple-watchos-sim
-            x86_64-apple-watchos-sim
-
-            # macOS
-            aarch64-apple-darwin
-            x86_64-apple-darwin
-
-            # visionOS
-            aarch64-apple-visionos
-            aarch64-apple-visionos-sim
-      
       - name: Determine version
         id: version
         run: |
@@ -95,11 +70,11 @@ jobs:
             VERSION="${{ needs.check-release.outputs.version }}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
+
       - name: Build XCFramework
-        run: |
-          chmod +x scripts/build-xcframework.sh
-          ./scripts/build-xcframework.sh ${{ steps.version.outputs.version }}
+        run: just build
+        env:
+          MINIJINJA_VERSION: ${{ steps.version.outputs.version }}
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
