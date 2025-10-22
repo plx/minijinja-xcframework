@@ -93,8 +93,8 @@ clean:
 
 # Clone minijinja from upstream
 clone-minijinja:
-    @echo "📦 Cloning minijinja..."
     #!/usr/bin/env bash
+    echo "📦 Cloning minijinja..."
     set -e
     cd "{{BUILD_DIR}}"
     if [ "{{MINIJINJA_VERSION}}" == "main" ]; then
@@ -169,8 +169,8 @@ create-xcframework:
 
 # Package XCFramework and compute checksum
 package:
-    @echo "📦 Creating distribution zip..."
     #!/usr/bin/env bash
+    echo "📦 Creating distribution zip..."
     set -e
     cd "{{OUTPUT_DIR}}"
     zip -r minijinja.xcframework.zip minijinja.xcframework
@@ -183,63 +183,63 @@ package:
 # =================================
 
 # Build all iOS targets
-build-ios: (build-target IOS_DEVICE_TARGET IOS_DEVICE IOS_SDK ARM64) \
-           (build-target IOS_SIM_X86_TARGET IOS_SIMULATOR IOS_SIM_SDK X86_64) \
-           (build-target IOS_SIM_ARM_TARGET IOS_SIMULATOR IOS_SIM_SDK ARM64)
+build-ios: (build-target "{{IOS_DEVICE_TARGET}}" "{{IOS_DEVICE}}" "{{IOS_SDK}}" "{{ARM64}}") \
+           (build-target "{{IOS_SIM_X86_TARGET}}" "{{IOS_SIMULATOR}}" "{{IOS_SIM_SDK}}" "{{X86_64}}") \
+           (build-target "{{IOS_SIM_ARM_TARGET}}" "{{IOS_SIMULATOR}}" "{{IOS_SIM_SDK}}" "{{ARM64}}")
     @echo "✅ iOS targets built"
 
 # Build all Catalyst targets
-build-catalyst: (build-target CATALYST_ARM_TARGET CATALYST MACOS_SDK ARM64) \
-                (build-target CATALYST_X86_TARGET CATALYST MACOS_SDK X86_64)
+build-catalyst: (build-target "{{CATALYST_ARM_TARGET}}" "{{CATALYST}}" "{{MACOS_SDK}}" "{{ARM64}}") \
+                (build-target "{{CATALYST_X86_TARGET}}" "{{CATALYST}}" "{{MACOS_SDK}}" "{{X86_64}}")
     @echo "✅ Catalyst targets built"
 
 # Build all macOS targets
-build-macos: (build-target MACOS_ARM_TARGET MACOS MACOS_SDK ARM64) \
-             (build-target MACOS_X86_TARGET MACOS MACOS_SDK X86_64)
+build-macos: (build-target "{{MACOS_ARM_TARGET}}" "{{MACOS}}" "{{MACOS_SDK}}" "{{ARM64}}") \
+             (build-target "{{MACOS_X86_TARGET}}" "{{MACOS}}" "{{MACOS_SDK}}" "{{X86_64}}")
     @echo "✅ macOS targets built"
 
 # Build all tvOS targets
-build-tvos: (build-target TVOS_DEVICE_TARGET TVOS_DEVICE TVOS_SDK ARM64) \
-            (build-target TVOS_SIM_X86_TARGET TVOS_SIMULATOR TVOS_SIM_SDK X86_64) \
-            (build-target TVOS_SIM_ARM_TARGET TVOS_SIMULATOR TVOS_SIM_SDK ARM64)
+build-tvos: (build-target "{{TVOS_DEVICE_TARGET}}" "{{TVOS_DEVICE}}" "{{TVOS_SDK}}" "{{ARM64}}") \
+            (build-target "{{TVOS_SIM_X86_TARGET}}" "{{TVOS_SIMULATOR}}" "{{TVOS_SIM_SDK}}" "{{X86_64}}") \
+            (build-target "{{TVOS_SIM_ARM_TARGET}}" "{{TVOS_SIMULATOR}}" "{{TVOS_SIM_SDK}}" "{{ARM64}}")
     @echo "✅ tvOS targets built"
 
 # Build all watchOS targets
-build-watchos: (build-target WATCHOS_DEVICE_TARGET WATCHOS_DEVICE WATCHOS_SDK ARM64) \
-               (build-target WATCHOS_SIM_ARM_TARGET WATCHOS_SIMULATOR WATCHOS_SIM_SDK ARM64) \
-               (build-target WATCHOS_SIM_X86_TARGET WATCHOS_SIMULATOR WATCHOS_SIM_SDK X86_64)
+build-watchos: (build-target "{{WATCHOS_DEVICE_TARGET}}" "{{WATCHOS_DEVICE}}" "{{WATCHOS_SDK}}" "{{ARM64}}") \
+               (build-target "{{WATCHOS_SIM_ARM_TARGET}}" "{{WATCHOS_SIMULATOR}}" "{{WATCHOS_SIM_SDK}}" "{{ARM64}}") \
+               (build-target "{{WATCHOS_SIM_X86_TARGET}}" "{{WATCHOS_SIMULATOR}}" "{{WATCHOS_SIM_SDK}}" "{{X86_64}}")
     @echo "✅ watchOS targets built"
 
 # Build all visionOS targets
-build-visionos: (build-target VISIONOS_DEVICE_TARGET VISIONOS_DEVICE VISIONOS_SDK ARM64) \
-                (build-target VISIONOS_SIM_TARGET VISIONOS_SIMULATOR VISIONOS_SIM_SDK ARM64)
+build-visionos: (build-target "{{VISIONOS_DEVICE_TARGET}}" "{{VISIONOS_DEVICE}}" "{{VISIONOS_SDK}}" "{{ARM64}}") \
+                (build-target "{{VISIONOS_SIM_TARGET}}" "{{VISIONOS_SIMULATOR}}" "{{VISIONOS_SIM_SDK}}" "{{ARM64}}")
     @echo "✅ visionOS targets built"
 
 # Fat Binary Creation Commands
 # =============================
 
 # Create iOS Simulator universal binary
-create-ios-sim-fat: (create-fat-binary IOS_SIMULATOR X86_64 ARM64)
+create-ios-sim-fat: (create-fat-binary "{{IOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
 
 # Create macOS universal binary
-create-macos-fat: (create-fat-binary MACOS X86_64 ARM64)
+create-macos-fat: (create-fat-binary "{{MACOS}}" "{{X86_64}}" "{{ARM64}}")
 
 # Create Catalyst universal binary
-create-catalyst-fat: (create-fat-binary CATALYST X86_64 ARM64)
+create-catalyst-fat: (create-fat-binary "{{CATALYST}}" "{{X86_64}}" "{{ARM64}}")
 
 # Create tvOS Simulator universal binary
-create-tvos-sim-fat: (create-fat-binary TVOS_SIMULATOR X86_64 ARM64)
+create-tvos-sim-fat: (create-fat-binary "{{TVOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
 
 # Create watchOS Simulator universal binary
-create-watchos-sim-fat: (create-fat-binary WATCHOS_SIMULATOR X86_64 ARM64)
+create-watchos-sim-fat: (create-fat-binary "{{WATCHOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
 
 # General-Purpose Build Commands
 # ===============================
 
 # Build for a specific target (parameterized)
 build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
-    @echo "🔨 Building for {{TARGET_VAR}}..."
     #!/usr/bin/env bash
+    echo "🔨 Building for {{TARGET_VAR}}..."
     set -e
 
     # Resolve variable references
@@ -282,8 +282,8 @@ build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
 
 # Create a universal (fat) binary for a platform
 create-fat-binary PLATFORM_VAR ARCH1_VAR ARCH2_VAR:
-    @echo "🔗 Creating {{PLATFORM_VAR}} universal binary..."
     #!/usr/bin/env bash
+    echo "🔗 Creating {{PLATFORM_VAR}} universal binary..."
     set -e
 
     PLATFORM="{{PLATFORM_VAR}}"
