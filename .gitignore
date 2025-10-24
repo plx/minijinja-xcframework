@@ -60,4 +60,7 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
-/build
+
+# rust & build locations 
+build/
+output/

@@ -16,7 +16,7 @@ ROOT_DIR := justfile_directory()
 BUILD_DIR := ROOT_DIR / "build"
 OUTPUT_DIR := ROOT_DIR / "output"
 MINIJINJA_DIR := BUILD_DIR / "minijinja"
-CAPI_DIR := MINIJINJA_DIR / "minijinja-capi"
+CAPI_DIR := MINIJINJA_DIR / "minijinja-cabi"
 PLATFORMS_DIR := BUILD_DIR / "platforms"
 
 # Deployment targets
@@ -115,33 +115,42 @@ clone-minijinja version=MINIJINJA_VERSION: clean
         git clone --branch "v{{version}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
     fi
 
+    # Patch minijinja-cabi to build as staticlib instead of cdylib for XCFramework
+    echo "🔧 Patching minijinja-cabi for static library build..."
+    cd "{{CAPI_DIR}}"
+    sed -i '' 's/crate-type = \["cdylib"\]/crate-type = ["staticlib"]/' Cargo.toml
+
 # Install all Rust cross-compilation targets (hierarchical)
 install-targets: install-toolchains install-ios-targets install-catalyst-targets install-macos-targets
     @echo "✅ All targets installed"
     @echo "ℹ️  Note: tvOS, watchOS, and visionOS are tier 3 targets and will be built using -Zbuild-std"
 
 # Install iOS targets (tier 2)
-install-ios-targets: (install-tier2-target IOS_DEVICE_TARGET) \
-                     (install-tier2-target IOS_SIM_X86_TARGET) \
-                     (install-tier2-target IOS_SIM_ARM_TARGET)
+install-ios-targets:
+    @echo "  📦 Installing {{IOS_DEVICE_TARGET}}..."
+    @rustup target add {{IOS_DEVICE_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
+    @echo "  📦 Installing {{IOS_SIM_X86_TARGET}}..."
+    @rustup target add {{IOS_SIM_X86_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
+    @echo "  📦 Installing {{IOS_SIM_ARM_TARGET}}..."
+    @rustup target add {{IOS_SIM_ARM_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
     @echo "✅ iOS targets installed"
 
 # Install Catalyst targets (tier 2)
-install-catalyst-targets: (install-tier2-target CATALYST_ARM_TARGET) \
-                          (install-tier2-target CATALYST_X86_TARGET)
+install-catalyst-targets:
+    @echo "  📦 Installing {{CATALYST_ARM_TARGET}}..."
+    @rustup target add {{CATALYST_ARM_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
+    @echo "  📦 Installing {{CATALYST_X86_TARGET}}..."
+    @rustup target add {{CATALYST_X86_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
     @echo "✅ Catalyst targets installed"
 
 # Install macOS targets (tier 1)
-install-macos-targets: (install-tier2-target MACOS_ARM_TARGET) \
-                       (install-tier2-target MACOS_X86_TARGET)
+install-macos-targets:
+    @echo "  📦 Installing {{MACOS_ARM_TARGET}}..."
+    @rustup target add {{MACOS_ARM_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
+    @echo "  📦 Installing {{MACOS_X86_TARGET}}..."
+    @rustup target add {{MACOS_X86_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
     @echo "✅ macOS targets installed"
 
-# Install a tier 2 target to the stable toolchain
-install-tier2-target TARGET_VAR:
-    #!/usr/bin/env bash
-    TARGET="{{TARGET_VAR}}"
-    echo "  📦 Installing $TARGET..."
-    rustup target add "$TARGET" --toolchain {{STABLE_TOOLCHAIN}}
 
 # Build all platform targets
 build-all: build-ios build-catalyst build-macos build-tvos build-watchos build-visionos
@@ -157,34 +166,24 @@ create-xcframework:
     xcodebuild -create-xcframework \
         -library "{{PLATFORMS_DIR}}/{{IOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{IOS_DEVICE}}-{{ARM64}}/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{IOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{IOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{IOS_SIMULATOR}}-universal/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{IOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{MACOS}}-universal/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{MACOS}}-universal/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{MACOS}}-universal/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{CATALYST}}-universal/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{CATALYST}}-universal/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{CATALYST}}-universal/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{TVOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{TVOS_DEVICE}}-{{ARM64}}/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{TVOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{TVOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{TVOS_SIMULATOR}}-universal/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{TVOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{WATCHOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{WATCHOS_DEVICE}}-{{ARM64}}/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{WATCHOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{WATCHOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{WATCHOS_SIMULATOR}}-universal/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{WATCHOS_SIMULATOR}}-universal/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{VISIONOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{VISIONOS_DEVICE}}-{{ARM64}}/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{VISIONOS_DEVICE}}-{{ARM64}}/lib/{{LIBRARY_NAME}}.dSYM" \
         -library "{{PLATFORMS_DIR}}/{{VISIONOS_SIMULATOR}}-{{ARM64}}/lib/{{LIBRARY_NAME}}" \
         -headers "{{PLATFORMS_DIR}}/{{VISIONOS_SIMULATOR}}-{{ARM64}}/include" \
-        -debug-symbols "{{PLATFORMS_DIR}}/{{VISIONOS_SIMULATOR}}-{{ARM64}}/lib/{{LIBRARY_NAME}}.dSYM" \
         -output "{{OUTPUT_DIR}}/minijinja.xcframework"
 
 # Package XCFramework and compute checksum
@@ -203,98 +202,81 @@ package:
 # =================================
 
 # Build all iOS targets
-build-ios: (build-target "{{IOS_DEVICE_TARGET}}" "{{IOS_DEVICE}}" "{{IOS_SDK}}" "{{ARM64}}") \
-           (build-target "{{IOS_SIM_X86_TARGET}}" "{{IOS_SIMULATOR}}" "{{IOS_SIM_SDK}}" "{{X86_64}}") \
-           (build-target "{{IOS_SIM_ARM_TARGET}}" "{{IOS_SIMULATOR}}" "{{IOS_SIM_SDK}}" "{{ARM64}}")
+build-ios:
+    @just _build-tier2 {{IOS_DEVICE_TARGET}} {{IOS_DEVICE}} {{IOS_SDK}} {{ARM64}}
+    @just _build-tier2 {{IOS_SIM_X86_TARGET}} {{IOS_SIMULATOR}} {{IOS_SIM_SDK}} {{X86_64}}
+    @just _build-tier2 {{IOS_SIM_ARM_TARGET}} {{IOS_SIMULATOR}} {{IOS_SIM_SDK}} {{ARM64}}
     @echo "✅ iOS targets built"
 
 # Build all Catalyst targets
-build-catalyst: (build-target "{{CATALYST_ARM_TARGET}}" "{{CATALYST}}" "{{MACOS_SDK}}" "{{ARM64}}") \
-                (build-target "{{CATALYST_X86_TARGET}}" "{{CATALYST}}" "{{MACOS_SDK}}" "{{X86_64}}")
+build-catalyst:
+    @just _build-tier2 {{CATALYST_ARM_TARGET}} {{CATALYST}} {{MACOS_SDK}} {{ARM64}}
+    @just _build-tier2 {{CATALYST_X86_TARGET}} {{CATALYST}} {{MACOS_SDK}} {{X86_64}}
     @echo "✅ Catalyst targets built"
 
 # Build all macOS targets
-build-macos: (build-target "{{MACOS_ARM_TARGET}}" "{{MACOS}}" "{{MACOS_SDK}}" "{{ARM64}}") \
-             (build-target "{{MACOS_X86_TARGET}}" "{{MACOS}}" "{{MACOS_SDK}}" "{{X86_64}}")
+build-macos:
+    @just _build-tier2 {{MACOS_ARM_TARGET}} {{MACOS}} {{MACOS_SDK}} {{ARM64}}
+    @just _build-tier2 {{MACOS_X86_TARGET}} {{MACOS}} {{MACOS_SDK}} {{X86_64}}
     @echo "✅ macOS targets built"
 
 # Build all tvOS targets
-build-tvos: (build-target "{{TVOS_DEVICE_TARGET}}" "{{TVOS_DEVICE}}" "{{TVOS_SDK}}" "{{ARM64}}") \
-            (build-target "{{TVOS_SIM_X86_TARGET}}" "{{TVOS_SIMULATOR}}" "{{TVOS_SIM_SDK}}" "{{X86_64}}") \
-            (build-target "{{TVOS_SIM_ARM_TARGET}}" "{{TVOS_SIMULATOR}}" "{{TVOS_SIM_SDK}}" "{{ARM64}}")
+build-tvos:
+    @just _build-tier3 {{TVOS_DEVICE_TARGET}} {{TVOS_DEVICE}} {{TVOS_SDK}} {{ARM64}}
+    @just _build-tier3 {{TVOS_SIM_X86_TARGET}} {{TVOS_SIMULATOR}} {{TVOS_SIM_SDK}} {{X86_64}}
+    @just _build-tier3 {{TVOS_SIM_ARM_TARGET}} {{TVOS_SIMULATOR}} {{TVOS_SIM_SDK}} {{ARM64}}
     @echo "✅ tvOS targets built"
 
 # Build all watchOS targets
-build-watchos: (build-target "{{WATCHOS_DEVICE_TARGET}}" "{{WATCHOS_DEVICE}}" "{{WATCHOS_SDK}}" "{{ARM64}}") \
-               (build-target "{{WATCHOS_SIM_ARM_TARGET}}" "{{WATCHOS_SIMULATOR}}" "{{WATCHOS_SIM_SDK}}" "{{ARM64}}") \
-               (build-target "{{WATCHOS_SIM_X86_TARGET}}" "{{WATCHOS_SIMULATOR}}" "{{WATCHOS_SIM_SDK}}" "{{X86_64}}")
+build-watchos:
+    @just _build-tier3 {{WATCHOS_DEVICE_TARGET}} {{WATCHOS_DEVICE}} {{WATCHOS_SDK}} {{ARM64}}
+    @just _build-tier3 {{WATCHOS_SIM_ARM_TARGET}} {{WATCHOS_SIMULATOR}} {{WATCHOS_SIM_SDK}} {{ARM64}}
+    @just _build-tier3 {{WATCHOS_SIM_X86_TARGET}} {{WATCHOS_SIMULATOR}} {{WATCHOS_SIM_SDK}} {{X86_64}}
     @echo "✅ watchOS targets built"
 
 # Build all visionOS targets
-build-visionos: (build-target "{{VISIONOS_DEVICE_TARGET}}" "{{VISIONOS_DEVICE}}" "{{VISIONOS_SDK}}" "{{ARM64}}") \
-                (build-target "{{VISIONOS_SIM_TARGET}}" "{{VISIONOS_SIMULATOR}}" "{{VISIONOS_SIM_SDK}}" "{{ARM64}}")
+build-visionos:
+    @just _build-tier3 {{VISIONOS_DEVICE_TARGET}} {{VISIONOS_DEVICE}} {{VISIONOS_SDK}} {{ARM64}}
+    @just _build-tier3 {{VISIONOS_SIM_TARGET}} {{VISIONOS_SIMULATOR}} {{VISIONOS_SIM_SDK}} {{ARM64}}
     @echo "✅ visionOS targets built"
 
 # Fat Binary Creation Commands
 # =============================
 
 # Create iOS Simulator universal binary
-create-ios-sim-fat: (create-fat-binary "{{IOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
+create-ios-sim-fat:
+    @just _create-fat-binary {{IOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
 # Create macOS universal binary
-create-macos-fat: (create-fat-binary "{{MACOS}}" "{{X86_64}}" "{{ARM64}}")
+create-macos-fat:
+    @just _create-fat-binary {{MACOS}} {{X86_64}} {{ARM64}}
 
 # Create Catalyst universal binary
-create-catalyst-fat: (create-fat-binary "{{CATALYST}}" "{{X86_64}}" "{{ARM64}}")
+create-catalyst-fat:
+    @just _create-fat-binary {{CATALYST}} {{X86_64}} {{ARM64}}
 
 # Create tvOS Simulator universal binary
-create-tvos-sim-fat: (create-fat-binary "{{TVOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
+create-tvos-sim-fat:
+    @just _create-fat-binary {{TVOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
 # Create watchOS Simulator universal binary
-create-watchos-sim-fat: (create-fat-binary "{{WATCHOS_SIMULATOR}}" "{{X86_64}}" "{{ARM64}}")
+create-watchos-sim-fat:
+    @just _create-fat-binary {{WATCHOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
-# General-Purpose Build Commands
+# Internal Build Implementations
 # ===============================
 
-# Build for a specific target (auto-dispatches to stable or nightly based on tier)
-build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
+# Build a tier 2 target (iOS, Catalyst, macOS) using stable toolchain
+_build-tier2 TARGET PLATFORM SDK ARCH:
     #!/usr/bin/env bash
-    TARGET="{{TARGET_VAR}}"
-
-    # Detect tier 3 targets (tvOS, watchOS, visionOS)
-    if [[ "$TARGET" =~ (tvos|watchos|visionos) ]]; then
-        just build-with-nightly "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}"
-    else
-        just build-with-stable "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}"
-    fi
-
-# Build for a specific target using stable toolchain (tier 1/2 targets)
-build-with-stable TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
-    @just _build-impl "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}" "+{{STABLE_TOOLCHAIN}}" ""
-
-# Build for a specific target using nightly toolchain with -Zbuild-std (tier 3 targets)
-build-with-nightly TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
-    @just _build-impl "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}" "+{{NIGHTLY_TOOLCHAIN}}" "-Zbuild-std"
-
-# Internal implementation for building targets (parameterized by toolchain)
-_build-impl TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR TOOLCHAIN_VAR BUILD_STD_FLAG:
-    #!/usr/bin/env bash
-    echo "🔨 Building for {{TARGET_VAR}} ({{TOOLCHAIN_VAR}})..."
+    echo "🔨 Building for {{TARGET}} (+{{STABLE_TOOLCHAIN}})..."
     set -e
 
-    # Resolve variable references
-    TARGET="{{TARGET_VAR}}"
-    PLATFORM="{{PLATFORM_VAR}}"
-    SDK="{{SDK_VAR}}"
-    ARCH="{{ARCH_VAR}}"
-    TOOLCHAIN="{{TOOLCHAIN_VAR}}"
-    BUILD_STD_FLAG="{{BUILD_STD_FLAG}}"
-
     # Set up build environment
-    export SDKROOT=$(xcrun --sdk "$SDK" --show-sdk-path)
-    export CC=$(xcrun --sdk "$SDK" --find clang)
-    export CXX=$(xcrun --sdk "$SDK" --find clang++)
-    export AR=$(xcrun --sdk "$SDK" --find ar)
+    export SDKROOT=$(xcrun --sdk "{{SDK}}" --show-sdk-path)
+    export CC=$(xcrun --sdk "{{SDK}}" --find clang)
+    export CXX=$(xcrun --sdk "{{SDK}}" --find clang++)
+    export AR=$(xcrun --sdk "{{SDK}}" --find ar)
 
     # Set deployment targets
     export IPHONEOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
@@ -308,49 +290,75 @@ _build-impl TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR TOOLCHAIN_VAR BUILD_STD_FLA
 
     # Build the C API crate
     cd "{{CAPI_DIR}}"
-    cargo $TOOLCHAIN build --release --target "$TARGET" $BUILD_STD_FLAG
+    cargo +{{STABLE_TOOLCHAIN}} build --release --target "{{TARGET}}"
 
     # Create platform-specific directory
-    PLATFORM_DIR="{{PLATFORMS_DIR}}/${PLATFORM}-${ARCH}"
+    PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
     mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
 
     # Copy headers and library
     cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
-    cp "{{MINIJINJA_DIR}}/target/$TARGET/release/libminijinja_capi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
+    cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
 
-    # Extract debug symbols
-    echo "  📝 Extracting debug symbols..."
-    dsymutil "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}" -o "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}.dSYM"
+    # Note: Debug symbols are embedded in the static library (.a file)
+    # No need to extract separate dSYM for static libraries
 
-# Create a universal (fat) binary for a platform
-create-fat-binary PLATFORM_VAR ARCH1_VAR ARCH2_VAR:
+# Build a tier 3 target (tvOS, watchOS, visionOS) using nightly toolchain with -Zbuild-std
+_build-tier3 TARGET PLATFORM SDK ARCH:
     #!/usr/bin/env bash
-    echo "🔗 Creating {{PLATFORM_VAR}} universal binary..."
+    echo "🔨 Building for {{TARGET}} (+{{NIGHTLY_TOOLCHAIN}})..."
     set -e
 
-    PLATFORM="{{PLATFORM_VAR}}"
-    ARCH1="{{ARCH1_VAR}}"
-    ARCH2="{{ARCH2_VAR}}"
+    # Set up build environment
+    export SDKROOT=$(xcrun --sdk "{{SDK}}" --show-sdk-path)
+    export CC=$(xcrun --sdk "{{SDK}}" --find clang)
+    export CXX=$(xcrun --sdk "{{SDK}}" --find clang++)
+    export AR=$(xcrun --sdk "{{SDK}}" --find ar)
+
+    # Set deployment targets
+    export IPHONEOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
+    export MACOSX_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
+    export TVOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
+    export WATCHOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
+    export VISIONOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
+
+    # Enable debug symbols
+    export RUSTFLAGS="-C debuginfo=2"
+
+    # Build the C API crate
+    cd "{{CAPI_DIR}}"
+    cargo +{{NIGHTLY_TOOLCHAIN}} build --release --target "{{TARGET}}" -Zbuild-std
+
+    # Create platform-specific directory
+    PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
+    mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
+
+    # Copy headers and library
+    cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
+    cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
+
+    # Note: Debug symbols are embedded in the static library (.a file)
+    # No need to extract separate dSYM for static libraries
+
+# Create a universal (fat) binary for a platform
+_create-fat-binary PLATFORM ARCH1 ARCH2:
+    #!/usr/bin/env bash
+    echo "🔗 Creating {{PLATFORM}} universal binary..."
+    set -e
 
     cd "{{PLATFORMS_DIR}}"
 
     # Create universal directory
-    mkdir -p "${PLATFORM}-universal/lib"
+    mkdir -p "{{PLATFORM}}-universal/lib"
 
     # Create fat binary
     lipo -create \
-        "${PLATFORM}-${ARCH1}/lib/{{LIBRARY_NAME}}" \
-        "${PLATFORM}-${ARCH2}/lib/{{LIBRARY_NAME}}" \
-        -output "${PLATFORM}-universal/lib/{{LIBRARY_NAME}}"
+        "{{PLATFORM}}-{{ARCH1}}/lib/{{LIBRARY_NAME}}" \
+        "{{PLATFORM}}-{{ARCH2}}/lib/{{LIBRARY_NAME}}" \
+        -output "{{PLATFORM}}-universal/lib/{{LIBRARY_NAME}}"
 
     # Copy headers
-    cp -r "${PLATFORM}-${ARCH2}/include" "${PLATFORM}-universal/"
+    cp -r "{{PLATFORM}}-{{ARCH2}}/include" "{{PLATFORM}}-universal/"
 
-    # Merge dSYMs
-    mkdir -p "${PLATFORM}-universal/lib/{{LIBRARY_NAME}}.dSYM/Contents/Resources/DWARF"
-    lipo -create \
-        "${PLATFORM}-${ARCH1}/lib/{{LIBRARY_NAME}}.dSYM/Contents/Resources/DWARF/{{LIBRARY_NAME}}" \
-        "${PLATFORM}-${ARCH2}/lib/{{LIBRARY_NAME}}.dSYM/Contents/Resources/DWARF/{{LIBRARY_NAME}}" \
-        -output "${PLATFORM}-universal/lib/{{LIBRARY_NAME}}.dSYM/Contents/Resources/DWARF/{{LIBRARY_NAME}}"
-    cp "${PLATFORM}-${ARCH2}/lib/{{LIBRARY_NAME}}.dSYM/Contents/Info.plist" \
-       "${PLATFORM}-universal/lib/{{LIBRARY_NAME}}.dSYM/Contents/"
+    # Note: Debug symbols are embedded in the static library
+    # No separate dSYM merging needed
