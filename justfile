@@ -7,6 +7,10 @@
 # Version (can be overridden via environment variable or command line)
 MINIJINJA_VERSION := env_var_or_default('MINIJINJA_VERSION', 'main')
 
+# Toolchain versions
+STABLE_TOOLCHAIN := "1.90.0"
+NIGHTLY_TOOLCHAIN := "nightly"  # TODO: Pin to specific date after testing
+
 # Directory paths
 ROOT_DIR := justfile_directory()
 BUILD_DIR := ROOT_DIR / "build"
@@ -85,6 +89,14 @@ build: clean clone-minijinja install-targets build-all create-fat-binaries creat
 # Top-Level Build Steps
 # ======================
 
+# Install Rust toolchains required for building
+install-toolchains:
+    @echo "🦀 Installing Rust toolchains..."
+    rustup toolchain install {{STABLE_TOOLCHAIN}}
+    rustup toolchain install {{NIGHTLY_TOOLCHAIN}}
+    rustup component add rust-src --toolchain {{NIGHTLY_TOOLCHAIN}}
+    @echo "✅ Toolchains installed"
+
 # Clean previous builds
 clean:
     @echo "🧹 Cleaning build directories..."
@@ -92,36 +104,44 @@ clean:
     mkdir -p "{{BUILD_DIR}}" "{{OUTPUT_DIR}}"
 
 # Clone minijinja from upstream
-clone-minijinja:
+clone-minijinja version=MINIJINJA_VERSION: clean
     #!/usr/bin/env bash
-    echo "📦 Cloning minijinja..."
+    echo "📦 Cloning minijinja @ {{version}}..."
     set -e
     cd "{{BUILD_DIR}}"
-    if [ "{{MINIJINJA_VERSION}}" == "main" ]; then
+    if [ "{{version}}" == "main" ]; then
         git clone https://github.com/mitsuhiko/minijinja.git
     else
-        git clone --branch "v{{MINIJINJA_VERSION}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
+        git clone --branch "v{{version}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
     fi
 
-# Install all Rust cross-compilation targets
-install-targets:
-    @echo "🎯 Installing Rust targets..."
-    rustup target add \
-        {{IOS_DEVICE_TARGET}} \
-        {{IOS_SIM_X86_TARGET}} \
-        {{IOS_SIM_ARM_TARGET}} \
-        {{CATALYST_ARM_TARGET}} \
-        {{CATALYST_X86_TARGET}} \
-        {{MACOS_ARM_TARGET}} \
-        {{MACOS_X86_TARGET}} \
-        {{TVOS_DEVICE_TARGET}} \
-        {{TVOS_SIM_X86_TARGET}} \
-        {{TVOS_SIM_ARM_TARGET}} \
-        {{WATCHOS_DEVICE_TARGET}} \
-        {{WATCHOS_SIM_ARM_TARGET}} \
-        {{WATCHOS_SIM_X86_TARGET}} \
-        {{VISIONOS_DEVICE_TARGET}} \
-        {{VISIONOS_SIM_TARGET}}
+# Install all Rust cross-compilation targets (hierarchical)
+install-targets: install-toolchains install-ios-targets install-catalyst-targets install-macos-targets
+    @echo "✅ All targets installed"
+    @echo "ℹ️  Note: tvOS, watchOS, and visionOS are tier 3 targets and will be built using -Zbuild-std"
+
+# Install iOS targets (tier 2)
+install-ios-targets: (install-tier2-target IOS_DEVICE_TARGET) \
+                     (install-tier2-target IOS_SIM_X86_TARGET) \
+                     (install-tier2-target IOS_SIM_ARM_TARGET)
+    @echo "✅ iOS targets installed"
+
+# Install Catalyst targets (tier 2)
+install-catalyst-targets: (install-tier2-target CATALYST_ARM_TARGET) \
+                          (install-tier2-target CATALYST_X86_TARGET)
+    @echo "✅ Catalyst targets installed"
+
+# Install macOS targets (tier 1)
+install-macos-targets: (install-tier2-target MACOS_ARM_TARGET) \
+                       (install-tier2-target MACOS_X86_TARGET)
+    @echo "✅ macOS targets installed"
+
+# Install a tier 2 target to the stable toolchain
+install-tier2-target TARGET_VAR:
+    #!/usr/bin/env bash
+    TARGET="{{TARGET_VAR}}"
+    echo "  📦 Installing $TARGET..."
+    rustup target add "$TARGET" --toolchain {{STABLE_TOOLCHAIN}}
 
 # Build all platform targets
 build-all: build-ios build-catalyst build-macos build-tvos build-watchos build-visionos
@@ -236,10 +256,30 @@ create-watchos-sim-fat: (create-fat-binary "{{WATCHOS_SIMULATOR}}" "{{X86_64}}" 
 # General-Purpose Build Commands
 # ===============================
 
-# Build for a specific target (parameterized)
+# Build for a specific target (auto-dispatches to stable or nightly based on tier)
 build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
     #!/usr/bin/env bash
-    echo "🔨 Building for {{TARGET_VAR}}..."
+    TARGET="{{TARGET_VAR}}"
+
+    # Detect tier 3 targets (tvOS, watchOS, visionOS)
+    if [[ "$TARGET" =~ (tvos|watchos|visionos) ]]; then
+        just build-with-nightly "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}"
+    else
+        just build-with-stable "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}"
+    fi
+
+# Build for a specific target using stable toolchain (tier 1/2 targets)
+build-with-stable TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
+    @just _build-impl "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}" "+{{STABLE_TOOLCHAIN}}" ""
+
+# Build for a specific target using nightly toolchain with -Zbuild-std (tier 3 targets)
+build-with-nightly TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
+    @just _build-impl "{{TARGET_VAR}}" "{{PLATFORM_VAR}}" "{{SDK_VAR}}" "{{ARCH_VAR}}" "+{{NIGHTLY_TOOLCHAIN}}" "-Zbuild-std"
+
+# Internal implementation for building targets (parameterized by toolchain)
+_build-impl TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR TOOLCHAIN_VAR BUILD_STD_FLAG:
+    #!/usr/bin/env bash
+    echo "🔨 Building for {{TARGET_VAR}} ({{TOOLCHAIN_VAR}})..."
     set -e
 
     # Resolve variable references
@@ -247,6 +287,8 @@ build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
     PLATFORM="{{PLATFORM_VAR}}"
     SDK="{{SDK_VAR}}"
     ARCH="{{ARCH_VAR}}"
+    TOOLCHAIN="{{TOOLCHAIN_VAR}}"
+    BUILD_STD_FLAG="{{BUILD_STD_FLAG}}"
 
     # Set up build environment
     export SDKROOT=$(xcrun --sdk "$SDK" --show-sdk-path)
@@ -266,7 +308,7 @@ build-target TARGET_VAR PLATFORM_VAR SDK_VAR ARCH_VAR:
 
     # Build the C API crate
     cd "{{CAPI_DIR}}"
-    cargo build --release --target "$TARGET"
+    cargo $TOOLCHAIN build --release --target "$TARGET" $BUILD_STD_FLAG
 
     # Create platform-specific directory
     PLATFORM_DIR="{{PLATFORMS_DIR}}/${PLATFORM}-${ARCH}"

@@ -51,12 +51,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Install just
         uses: extractions/setup-just@v2
+
+      - name: Install Rust toolchains
+        run: just install-toolchains
 
       - name: Determine version
         id: version
@@ -98,13 +98,13 @@ jobs:
           name: minijinja XCFramework v${{ steps.version.outputs.version }}
           body: |
             ## minijinja XCFramework v${{ steps.version.outputs.version }}
-            
+
             This release packages [minijinja v${{ steps.version.outputs.version }}](https://github.com/mitsuhiko/minijinja/releases/tag/v${{ steps.version.outputs.version }}) as an XCFramework.
-            
+
             ### Installation
-            
+
             Add to your `Package.swift`:
-            
+
             ```swift
             .binaryTarget(
                 name: "minijinja",
@@ -112,11 +112,15 @@ jobs:
                 checksum: "${{ steps.checksum.outputs.checksum }}"
             )
             ```
-            
+
             ### Supported Platforms
+
+            #### Tier 1/2 Platforms (Stable Rust)
             - iOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
             - macOS 26.0+ (universal arm64/x86_64)
             - Mac Catalyst 26.0+ (universal arm64/x86_64)
+
+            #### Tier 3 Platforms ([Experimental](#build-information))
             - tvOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
             - watchOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
             - visionOS 26.0+ (arm64 device, arm64 simulator)
@@ -124,5 +128,19 @@ jobs:
             ### Features
             - Static library linking for optimal binary size
             - Debug symbols (dSYMs) embedded in XCFramework for crash symbolication
+
+            ### Build Information
+
+            This XCFramework is built using a hybrid toolchain approach:
+
+            - **Tier 1/2 platforms** (iOS, macOS, Catalyst) are built with **Rust stable 1.90.0**
+            - **Tier 3 platforms** (tvOS, watchOS, visionOS) are built with **Rust nightly** using the `-Zbuild-std` flag
+
+            Tier 3 platforms are labeled "experimental" because:
+            - They use nightly Rust (though nightly is generally stable for correctness)
+            - They require building the Rust standard library from source
+            - They receive less real-world testing in the Rust ecosystem
+
+            All platforms produce fully functional, safe binaries suitable for production use.
           files: output/minijinja.xcframework.zip
           token: ${{ secrets.GITHUB_TOKEN }}
