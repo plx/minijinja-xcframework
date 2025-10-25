@@ -8,8 +8,10 @@
 MINIJINJA_VERSION := env_var_or_default('MINIJINJA_VERSION', 'main')
 
 # Toolchain versions
-STABLE_TOOLCHAIN := "1.90.0"
-NIGHTLY_TOOLCHAIN := "nightly"  # TODO: Pin to specific date after testing
+STABLE_TOOLCHAIN := env_var_or_default('MINIJINJA_STABLE_TOOLCHAIN', '1.90.0')
+
+# TODO: Pin to specific date after testing
+NIGHTLY_TOOLCHAIN := env_var_or_default('MINIJINJA_NIGHTLY_TOOLCHAIN', 'nightly')
 
 # Directory paths
 ROOT_DIR := justfile_directory()
@@ -20,7 +22,7 @@ CAPI_DIR := MINIJINJA_DIR / "minijinja-cabi"
 PLATFORMS_DIR := BUILD_DIR / "platforms"
 
 # Deployment targets
-MINIMUM_DEPLOYMENT_TARGET := "26.0"
+MINIMUM_DEPLOYMENT_TARGET := env_var_or_default('MINIJINJA_MINIMUM_DEPLOYMENT_TARGET', '26.0')
 
 # Rust targets
 IOS_DEVICE_TARGET := "aarch64-apple-ios"
@@ -83,6 +85,7 @@ default:
 # ==================
 
 # Build the complete XCFramework (all steps)
+[group('build')]
 build: clean clone-minijinja install-targets build-all create-fat-binaries create-xcframework package
     @echo "✅ Build complete!"
 
@@ -90,6 +93,7 @@ build: clean clone-minijinja install-targets build-all create-fat-binaries creat
 # ======================
 
 # Install Rust toolchains required for building
+[group('install')]
 install-toolchains:
     @echo "🦀 Installing Rust toolchains..."
     rustup toolchain install {{STABLE_TOOLCHAIN}}
@@ -98,12 +102,14 @@ install-toolchains:
     @echo "✅ Toolchains installed"
 
 # Clean previous builds
+[group('build')]
 clean:
     @echo "🧹 Cleaning build directories..."
     rm -rf "{{BUILD_DIR}}" "{{OUTPUT_DIR}}"
     mkdir -p "{{BUILD_DIR}}" "{{OUTPUT_DIR}}"
 
 # Clone minijinja from upstream
+[group('build')]
 clone-minijinja version=MINIJINJA_VERSION: clean
     #!/usr/bin/env bash
     echo "📦 Cloning minijinja @ {{version}}..."
@@ -121,11 +127,15 @@ clone-minijinja version=MINIJINJA_VERSION: clean
     sed -i '' 's/crate-type = \["cdylib"\]/crate-type = ["staticlib"]/' Cargo.toml
 
 # Install all Rust cross-compilation targets (hierarchical)
+[group('install')]
 install-targets: install-toolchains install-ios-targets install-catalyst-targets install-macos-targets
     @echo "✅ All targets installed"
     @echo "ℹ️  Note: tvOS, watchOS, and visionOS are tier 3 targets and will be built using -Zbuild-std"
 
 # Install iOS targets (tier 2)
+[group('install')]
+[group('iOS')]
+[group('tier-2')]
 install-ios-targets:
     @echo "  📦 Installing {{IOS_DEVICE_TARGET}}..."
     @rustup target add {{IOS_DEVICE_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
@@ -136,6 +146,9 @@ install-ios-targets:
     @echo "✅ iOS targets installed"
 
 # Install Catalyst targets (tier 2)
+[group('install')]
+[group('catalyst')]
+[group('tier-2')]
 install-catalyst-targets:
     @echo "  📦 Installing {{CATALYST_ARM_TARGET}}..."
     @rustup target add {{CATALYST_ARM_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
@@ -144,6 +157,9 @@ install-catalyst-targets:
     @echo "✅ Catalyst targets installed"
 
 # Install macOS targets (tier 1)
+[group('install')]
+[group('macOS')]
+[group('tier-1')]
 install-macos-targets:
     @echo "  📦 Installing {{MACOS_ARM_TARGET}}..."
     @rustup target add {{MACOS_ARM_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
@@ -151,16 +167,18 @@ install-macos-targets:
     @rustup target add {{MACOS_X86_TARGET}} --toolchain {{STABLE_TOOLCHAIN}}
     @echo "✅ macOS targets installed"
 
-
 # Build all platform targets
+[group('build')]
 build-all: build-ios build-catalyst build-macos build-tvos build-watchos build-visionos
     @echo "✅ All targets built"
 
 # Create all universal (fat) binaries
+[group('lipo')]
 create-fat-binaries: create-ios-sim-fat create-macos-fat create-catalyst-fat create-tvos-sim-fat create-watchos-sim-fat
     @echo "✅ All fat binaries created"
 
 # Create the XCFramework
+[group('package')]
 create-xcframework:
     @echo "📱 Creating XCFramework..."
     xcodebuild -create-xcframework \
@@ -187,6 +205,7 @@ create-xcframework:
         -output "{{OUTPUT_DIR}}/minijinja.xcframework"
 
 # Package XCFramework and compute checksum
+[group('package')]
 package:
     #!/usr/bin/env bash
     echo "📦 Creating distribution zip..."
@@ -202,6 +221,9 @@ package:
 # =================================
 
 # Build all iOS targets
+[group('build')]
+[group('iOS')]
+[group('tier-2')]
 build-ios:
     @just _build-tier2 {{IOS_DEVICE_TARGET}} {{IOS_DEVICE}} {{IOS_SDK}} {{ARM64}}
     @just _build-tier2 {{IOS_SIM_X86_TARGET}} {{IOS_SIMULATOR}} {{IOS_SIM_SDK}} {{X86_64}}
@@ -209,18 +231,27 @@ build-ios:
     @echo "✅ iOS targets built"
 
 # Build all Catalyst targets
+[group('build')]
+[group('catalyst')]
+[group('tier-2')]
 build-catalyst:
     @just _build-tier2 {{CATALYST_ARM_TARGET}} {{CATALYST}} {{MACOS_SDK}} {{ARM64}}
     @just _build-tier2 {{CATALYST_X86_TARGET}} {{CATALYST}} {{MACOS_SDK}} {{X86_64}}
     @echo "✅ Catalyst targets built"
 
 # Build all macOS targets
+[group('build')]
+[group('macOS')]
+[group('tier-1')]
 build-macos:
     @just _build-tier2 {{MACOS_ARM_TARGET}} {{MACOS}} {{MACOS_SDK}} {{ARM64}}
     @just _build-tier2 {{MACOS_X86_TARGET}} {{MACOS}} {{MACOS_SDK}} {{X86_64}}
     @echo "✅ macOS targets built"
 
 # Build all tvOS targets
+[group('build')]
+[group('tvOS')]
+[group('tier-3')]
 build-tvos:
     @just _build-tier3 {{TVOS_DEVICE_TARGET}} {{TVOS_DEVICE}} {{TVOS_SDK}} {{ARM64}}
     @just _build-tier3 {{TVOS_SIM_X86_TARGET}} {{TVOS_SIMULATOR}} {{TVOS_SIM_SDK}} {{X86_64}}
@@ -228,6 +259,9 @@ build-tvos:
     @echo "✅ tvOS targets built"
 
 # Build all watchOS targets
+[group('build')]
+[group('watchOS')]
+[group('tier-3')]
 build-watchos:
     @just _build-tier3 {{WATCHOS_DEVICE_TARGET}} {{WATCHOS_DEVICE}} {{WATCHOS_SDK}} {{ARM64}}
     @just _build-tier3 {{WATCHOS_SIM_ARM_TARGET}} {{WATCHOS_SIMULATOR}} {{WATCHOS_SIM_SDK}} {{ARM64}}
@@ -235,6 +269,9 @@ build-watchos:
     @echo "✅ watchOS targets built"
 
 # Build all visionOS targets
+[group('build')]
+[group('visionOS')]
+[group('tier-3')]
 build-visionos:
     @just _build-tier3 {{VISIONOS_DEVICE_TARGET}} {{VISIONOS_DEVICE}} {{VISIONOS_SDK}} {{ARM64}}
     @just _build-tier3 {{VISIONOS_SIM_TARGET}} {{VISIONOS_SIMULATOR}} {{VISIONOS_SIM_SDK}} {{ARM64}}
@@ -244,22 +281,37 @@ build-visionos:
 # =============================
 
 # Create iOS Simulator universal binary
+[group('lipo')]
+[group('iOS')]
+[group('tier-2')]
 create-ios-sim-fat:
     @just _create-fat-binary {{IOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
 # Create macOS universal binary
+[group('lipo')]
+[group('macOS')]
+[group('tier-1')]
 create-macos-fat:
     @just _create-fat-binary {{MACOS}} {{X86_64}} {{ARM64}}
 
 # Create Catalyst universal binary
+[group('lipo')]
+[group('catalyst')]
+[group('tier-2')]
 create-catalyst-fat:
     @just _create-fat-binary {{CATALYST}} {{X86_64}} {{ARM64}}
 
 # Create tvOS Simulator universal binary
+[group('lipo')]
+[group('tvOS')]
+[group('tier-3')]
 create-tvos-sim-fat:
     @just _create-fat-binary {{TVOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
 # Create watchOS Simulator universal binary
+[group('lipo')]
+[group('watchOS')]
+[group('tier-3')]
 create-watchos-sim-fat:
     @just _create-fat-binary {{WATCHOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
@@ -267,6 +319,7 @@ create-watchos-sim-fat:
 # ===============================
 
 # Build a tier 2 target (iOS, Catalyst, macOS) using stable toolchain
+[group('tier-2')]
 _build-tier2 TARGET PLATFORM SDK ARCH:
     #!/usr/bin/env bash
     echo "🔨 Building for {{TARGET}} (+{{STABLE_TOOLCHAIN}})..."
@@ -304,6 +357,7 @@ _build-tier2 TARGET PLATFORM SDK ARCH:
     # No need to extract separate dSYM for static libraries
 
 # Build a tier 3 target (tvOS, watchOS, visionOS) using nightly toolchain with -Zbuild-std
+[group('tier-3')]
 _build-tier3 TARGET PLATFORM SDK ARCH:
     #!/usr/bin/env bash
     echo "🔨 Building for {{TARGET}} (+{{NIGHTLY_TOOLCHAIN}})..."
@@ -341,6 +395,7 @@ _build-tier3 TARGET PLATFORM SDK ARCH:
     # No need to extract separate dSYM for static libraries
 
 # Create a universal (fat) binary for a platform
+[group('lipo')]
 _create-fat-binary PLATFORM ARCH1 ARCH2:
     #!/usr/bin/env bash
     echo "🔗 Creating {{PLATFORM}} universal binary..."

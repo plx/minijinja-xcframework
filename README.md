@@ -1,24 +1,16 @@
 # minijinja-xcframework
 
-Builds and publishes XCFrameworks for [minijinja](https://github.com/mitsuhiko/minijinja).
+This repository contains a justfile "build script" that will clone-and-build [minijinja](https://github.com/mitsuhiko/minijinja) as an XCFramework, suitable for use in Swift Package Manager.
+
+It also contains Github Actions workflows to automatically build and publish new releases whenever a new minijinja version is released.
+
+This repository exists to facilitate development of its sister project, [hdxl-swift-minijinja](https://github.com/plx/hdxl-swift-minijinja), but the justfile build system may be useful for others as well.
 
 ## Prerequisites
 
-- macOS with Xcode installed
-- Rust toolchain
+- macOS 26.0+ with Xcode installed
+- Rustup installed
 - [just](https://github.com/casey/just) command runner
-
-## Installation
-
-Install `just`:
-
-```bash
-# Using Homebrew
-brew install just
-
-# Or using cargo
-cargo install just
-```
 
 ## Building
 
@@ -30,63 +22,36 @@ To build the complete XCFramework:
 just build
 ```
 
-Or specify a minijinja version:
+By default, this will build `minijinja` from `main`; you can override this by setting the `MINIJINJA_VERSION` environment variable to a specific release (e.g. `MINIJINJA_VERSION=2.1.0 just build` will build `minijinja`'s 2.1.0 release).
 
-```bash
-MINIJINJA_VERSION=2.1.0 just build
-```
+### Platforms and Rust Tiers
 
-### Available Commands
+The XCFramework is built for the following Apple platforms:
 
-View all available commands:
+- macOS (tier 1)
+- iOS (tier 2)
+- Mac Catalyst (tier 2)
+- tvOS (tier 3)
+- watchOS (tier 3)
+- visionOS (tier 3)
 
-```bash
-just --list
-```
+The "tiers" refer to the platform's status in the Rust ecosystem; [per the rustc book[^1]](https://doc.rust-lang.org/rustc/target-tier-policy.html):
 
-#### Top-Level Commands
+> Rust's continuous integration checks that tier 1 targets will always build and pass tests.
+> 
+> Rust's continuous integration checks that tier 2 targets will always build, but they may or may not pass tests.
+> 
+> Rust provides no guarantees about tier 3 targets; they exist in the codebase, but may or may not build.
 
-- `just clean` - Clean build and output directories
-- `just clone-minijinja` - Clone minijinja from upstream
-- `just install-targets` - Install all Rust cross-compilation targets
-- `just build-all` - Build all platform targets
-- `just create-fat-binaries` - Create universal binaries for simulators and macOS
-- `just create-xcframework` - Assemble the XCFramework
-- `just package` - Create distribution zip and compute checksum
-- `just build` - Run complete build process (all steps above)
+[^1]: Quoted exactly, but reordered for clarity.
 
-#### Platform-Specific Commands
+As such, please take note that `minijinja-xcframework`, itself, inherits those guarantees on a platform-by-platform basis.
 
-- `just build-ios` - Build all iOS targets (device + simulator)
-- `just build-catalyst` - Build all Mac Catalyst targets
-- `just build-macos` - Build all macOS targets
-- `just build-tvos` - Build all tvOS targets
-- `just build-watchos` - Build all watchOS targets
-- `just build-visionos` - Build all visionOS targets
+### Future Directions
 
-### Build Architecture
+*Eventually* this repository may gain a "local" Swift package that:
 
-The justfile uses a hierarchical structure:
+- imports the framework as a module
+- runs a suite of basic unit tests against it
 
-1. **Top-level commands** orchestrate major build steps
-2. **Platform commands** depend on target-specific builds
-3. **General-purpose commands** handle individual targets with parameters
-
-All architectures, platforms, SDKs, and targets are defined as constants at the top of the justfile, making it easy to maintain and update.
-
-## Output
-
-After building, you'll find:
-
-- `output/minijinja.xcframework` - The XCFramework
-- `output/minijinja.xcframework.zip` - Distribution archive
-- Checksum printed to console for Swift Package Manager
-
-## Supported Platforms
-
-- iOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-- macOS 26.0+ (universal arm64/x86_64)
-- Mac Catalyst 26.0+ (universal arm64/x86_64)
-- tvOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-- watchOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-- visionOS 26.0+ (arm64 device, arm64 simulator)
+Until then, users of `minijinja-xcframework` should take care to prepare their own test suites to ensure proper functionality.
