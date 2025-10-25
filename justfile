@@ -54,8 +54,9 @@ TVOS_SDK := "appletvos"
 TVOS_SIM_SDK := "appletvsimulator"
 WATCHOS_SDK := "watchos"
 WATCHOS_SIM_SDK := "watchsimulator"
-VISIONOS_SDK := "visionos"
-VISIONOS_SIM_SDK := "visionossimulator"
+# NOTE: `xcodebuild` still uses `xros` and `xrsimulator` instead of `visionOS` (etc.)
+VISIONOS_SDK := "xros"
+VISIONOS_SIM_SDK := "xrsimulator"
 
 # Architecture names
 ARM64 := "arm64"
