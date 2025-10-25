@@ -76,6 +76,7 @@ VISIONOS_SIMULATOR := "visionos-simulator"
 # Library and header names
 LIBRARY_NAME := "libminijinja.a"
 HEADER_NAME := "minijinja.h"
+MODULEMAP_NAME := "module.modulemap"
 
 # Default recipe (shows available commands)
 default:
@@ -86,7 +87,7 @@ default:
 
 # Build the complete XCFramework (all steps)
 [group('build')]
-build: clean clone-minijinja install-targets build-all create-fat-binaries create-xcframework package
+build: clean clone-minijinja install-targets build-all create-fat-binaries verify-modules create-xcframework package
     @echo "✅ Build complete!"
 
 # Top-Level Build Steps
@@ -176,6 +177,11 @@ build-all: build-ios build-catalyst build-macos build-tvos build-watchos build-v
 [group('lipo')]
 create-fat-binaries: create-ios-sim-fat create-macos-fat create-catalyst-fat create-tvos-sim-fat create-watchos-sim-fat
     @echo "✅ All fat binaries created"
+
+# Verify all platform modules
+[group('verify')]
+verify-modules: verify-ios-modules verify-catalyst-modules verify-macos-modules verify-tvos-modules verify-watchos-modules verify-visionos-modules
+    @echo "✅ All modules verified"
 
 # Create the XCFramework
 [group('package')]
@@ -315,6 +321,55 @@ create-tvos-sim-fat:
 create-watchos-sim-fat:
     @just _create-fat-binary {{WATCHOS_SIMULATOR}} {{X86_64}} {{ARM64}}
 
+# Module Verification Commands
+# =============================
+
+# Verify iOS modules
+[group('verify')]
+[group('iOS')]
+verify-ios-modules:
+    @just _verify-module {{IOS_DEVICE}} {{ARM64}} {{IOS_SDK}}
+    @just _verify-module {{IOS_SIMULATOR}} universal {{IOS_SIM_SDK}}
+    @echo "✅ iOS modules verified"
+
+# Verify Catalyst modules
+[group('verify')]
+[group('catalyst')]
+verify-catalyst-modules:
+    @just _verify-module {{CATALYST}} universal {{MACOS_SDK}}
+    @echo "✅ Catalyst modules verified"
+
+# Verify macOS modules
+[group('verify')]
+[group('macOS')]
+verify-macos-modules:
+    @just _verify-module {{MACOS}} universal {{MACOS_SDK}}
+    @echo "✅ macOS modules verified"
+
+# Verify tvOS modules
+[group('verify')]
+[group('tvOS')]
+verify-tvos-modules:
+    @just _verify-module {{TVOS_DEVICE}} {{ARM64}} {{TVOS_SDK}}
+    @just _verify-module {{TVOS_SIMULATOR}} universal {{TVOS_SIM_SDK}}
+    @echo "✅ tvOS modules verified"
+
+# Verify watchOS modules
+[group('verify')]
+[group('watchOS')]
+verify-watchos-modules:
+    @just _verify-module {{WATCHOS_DEVICE}} {{ARM64}} {{WATCHOS_SDK}}
+    @just _verify-module {{WATCHOS_SIMULATOR}} universal {{WATCHOS_SIM_SDK}}
+    @echo "✅ watchOS modules verified"
+
+# Verify visionOS modules
+[group('verify')]
+[group('visionOS')]
+verify-visionos-modules:
+    @just _verify-module {{VISIONOS_DEVICE}} {{ARM64}} {{VISIONOS_SDK}}
+    @just _verify-module {{VISIONOS_SIMULATOR}} {{ARM64}} {{VISIONOS_SIM_SDK}}
+    @echo "✅ visionOS modules verified"
+
 # Internal Build Implementations
 # ===============================
 
@@ -349,8 +404,9 @@ _build-tier2 TARGET PLATFORM SDK ARCH:
     PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
     mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
 
-    # Copy headers and library
+    # Copy headers, module map, and library
     cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
+    cp "{{ROOT_DIR}}/{{MODULEMAP_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
 
     # Note: Debug symbols are embedded in the static library (.a file)
@@ -387,8 +443,9 @@ _build-tier3 TARGET PLATFORM SDK ARCH:
     PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
     mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
 
-    # Copy headers and library
+    # Copy headers, module map, and library
     cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
+    cp "{{ROOT_DIR}}/{{MODULEMAP_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
 
     # Note: Debug symbols are embedded in the static library (.a file)
@@ -412,8 +469,61 @@ _create-fat-binary PLATFORM ARCH1 ARCH2:
         "{{PLATFORM}}-{{ARCH2}}/lib/{{LIBRARY_NAME}}" \
         -output "{{PLATFORM}}-universal/lib/{{LIBRARY_NAME}}"
 
-    # Copy headers
+    # Copy headers and module map
     cp -r "{{PLATFORM}}-{{ARCH2}}/include" "{{PLATFORM}}-universal/"
 
     # Note: Debug symbols are embedded in the static library
     # No separate dSYM merging needed
+
+# Verify a module using clang
+[group('verify')]
+_verify-module PLATFORM ARCH SDK:
+    #!/usr/bin/env bash
+    echo "🔍 Verifying {{PLATFORM}}-{{ARCH}} module..."
+    set -e
+
+    # Set up SDK environment
+    export SDKROOT=$(xcrun --sdk "{{SDK}}" --show-sdk-path)
+
+    PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
+    INCLUDE_DIR="$PLATFORM_DIR/include"
+
+    # Check that module.modulemap exists
+    if [ ! -f "$INCLUDE_DIR/{{MODULEMAP_NAME}}" ]; then
+        echo "❌ Error: module.modulemap not found in $INCLUDE_DIR"
+        exit 1
+    fi
+
+    # Create a temporary test file to verify module import
+    TEST_FILE=$(mktemp /tmp/test_module.XXXXXX.m)
+    trap "rm -f $TEST_FILE" EXIT
+
+    cat > "$TEST_FILE" << 'EOF'
+    @import minijinja;
+
+    int main() {
+        // Simple test to ensure the module can be imported
+        // and basic types are accessible
+        mj_value val;
+        return 0;
+    }
+    EOF
+
+    # Verify module with clang
+    # -fmodules: Enable modules
+    # -fmodules-validate-system-headers: Validate system headers in modules
+    # -I: Add include path
+    # -fsyntax-only: Only check syntax, don't compile
+    xcrun --sdk "{{SDK}}" clang \
+        -fmodules \
+        -fmodules-validate-system-headers \
+        -I "$INCLUDE_DIR" \
+        -fsyntax-only \
+        "$TEST_FILE"
+
+    if [ $? -eq 0 ]; then
+        echo "✅ Module verified successfully"
+    else
+        echo "❌ Module verification failed"
+        exit 1
+    fi

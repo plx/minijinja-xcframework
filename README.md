@@ -47,6 +47,32 @@ The "tiers" refer to the platform's status in the Rust ecosystem; [per the rustc
 
 As such, please take note that `minijinja-xcframework`, itself, inherits those guarantees on a platform-by-platform basis.
 
+### Module Verification
+
+The build process includes automatic Clang module verification to ensure proper modularization:
+
+- A `module.modulemap` file is included with each platform build
+- After building and creating fat binaries, the build system runs `just verify-modules`
+- Verification uses Clang's `-fmodules` and `-fmodules-validate-system-headers` flags
+- Each platform's module is tested by attempting to import it in a test Objective-C file
+
+You can run module verification separately:
+
+```bash
+# Verify all modules (after building)
+just verify-modules
+
+# Verify specific platform modules
+just verify-ios-modules
+just verify-macos-modules
+just verify-catalyst-modules
+just verify-tvos-modules
+just verify-watchos-modules
+just verify-visionos-modules
+```
+
+This ensures that the headers are properly modularized and can be imported from Swift and Objective-C code.
+
 ### Future Directions
 
 *Eventually* this repository may gain a "local" Swift package that:
