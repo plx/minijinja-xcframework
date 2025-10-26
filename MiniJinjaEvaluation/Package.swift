@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,11 +6,11 @@ import PackageDescription
 let package = Package(
     name: "MiniJinjaEvaluation",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14),
-        .tvOS(.v17),
-        .watchOS(.v10),
-        .visionOS(.v1)
+        .iOS(.v26),
+        .macOS(.v26),
+        .tvOS(.v26),
+        .watchOS(.v26),
+        .visionOS(.v26)
     ],
     products: [
         // Library product for evaluation and experimentation
@@ -37,5 +37,6 @@ let package = Package(
         .testTarget(
             name: "MiniJinjaEvaluationTests",
             dependencies: ["MiniJinjaEvaluation"]),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

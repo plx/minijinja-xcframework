@@ -16,3 +16,6 @@ As such, the structure of this repository is like so:
 
 That's the intent, but but we're not quite there—still getting things fully-working.
 
+# Notes
+
+- As of this summer, Apple has moved to uniform, year-based versions for all platforms and tools: iOS 18 is followed by iOS 26, visionOS 2 is followed by visionOS 26, the latest Xcode is 26, and so on; to enable these versions in a Package.swift file requires using the 6.2 versions of the tooling (`// swift-tools-version: 6.2`).
