@@ -1,0 +1,16 @@
+---
+Name: MiniJinjaC
+
+# APINotes for MiniJinja C API
+#
+# This file customizes how the MiniJinja C API is imported into Swift.
+# Currently, no customizations are applied - this serves as a placeholder
+# for future refinements such as:
+#
+# - Nullability annotations (_Nullable, _Nonnull)
+# - Ownership attributes for ARC integration
+# - Swift name mappings for better API ergonomics
+# - Type refinements and conversions
+#
+# For APINotes syntax reference, see:
+# https://github.com/apple/swift/blob/main/apinotes/README.md

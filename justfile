@@ -78,6 +78,7 @@ VISIONOS_SIMULATOR := "visionos-simulator"
 LIBRARY_NAME := "libminijinja.a"
 HEADER_NAME := "minijinja.h"
 MODULEMAP_NAME := "module.modulemap"
+APINOTES_NAME := "MiniJinjaC.apinotes"
 
 # Default recipe (shows available commands)
 default:
@@ -405,9 +406,10 @@ _build-tier2 TARGET PLATFORM SDK ARCH:
     PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
     mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
 
-    # Copy headers, module map, and library
+    # Copy headers, module map, APINotes, and library
     cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{ROOT_DIR}}/{{MODULEMAP_NAME}}" "$PLATFORM_DIR/include/"
+    cp "{{ROOT_DIR}}/{{APINOTES_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
 
     # Note: Debug symbols are embedded in the static library (.a file)
@@ -444,9 +446,10 @@ _build-tier3 TARGET PLATFORM SDK ARCH:
     PLATFORM_DIR="{{PLATFORMS_DIR}}/{{PLATFORM}}-{{ARCH}}"
     mkdir -p "$PLATFORM_DIR/include" "$PLATFORM_DIR/lib"
 
-    # Copy headers, module map, and library
+    # Copy headers, module map, APINotes, and library
     cp "{{CAPI_DIR}}/include/{{HEADER_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{ROOT_DIR}}/{{MODULEMAP_NAME}}" "$PLATFORM_DIR/include/"
+    cp "{{ROOT_DIR}}/{{APINOTES_NAME}}" "$PLATFORM_DIR/include/"
     cp "{{MINIJINJA_DIR}}/target/{{TARGET}}/release/libminijinja_cabi.a" "$PLATFORM_DIR/lib/{{LIBRARY_NAME}}"
 
     # Note: Debug symbols are embedded in the static library (.a file)
