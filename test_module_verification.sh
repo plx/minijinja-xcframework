@@ -54,7 +54,7 @@ TEST_FILE=$(mktemp /tmp/test_module.XXXXXX.m)
 trap "rm -f $TEST_FILE" EXIT
 
 cat > "$TEST_FILE" << 'EOF'
-@import minijinja;
+@import MiniJinjaC;
 
 int main() {
     // Simple test to ensure the module can be imported

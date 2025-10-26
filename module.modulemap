@@ -1,5 +1,5 @@
 // Module map for MiniJinja C API
-module minijinja {
+module MiniJinjaC {
     header "minijinja.h"
     export *
 }
