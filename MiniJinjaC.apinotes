@@ -1,16 +1,396 @@
----
-Name: MiniJinjaC
-
 # APINotes for MiniJinja C API
 #
 # This file customizes how the MiniJinja C API is imported into Swift.
-# Currently, no customizations are applied - this serves as a placeholder
-# for future refinements such as:
+# We deliberately take a light touch, here, since our eventual goal is
+# to wrap `MiniJinjaC` into a Swift-friendly API; our customizations below
+# are largely restricted to:
 #
-# - Nullability annotations (_Nullable, _Nonnull)
-# - Ownership attributes for ARC integration
-# - Swift name mappings for better API ergonomics
-# - Type refinements and conversions
+# - renaming enum cases as per Swift conventions
+# - adding argument labels as per Swift conventions
+# - adding nullability annotations where appropriate
 #
-# For APINotes syntax reference, see:
-# https://github.com/apple/swift/blob/main/apinotes/README.md
+# On that last point, with at most a few exceptions, the actual C ABI functions
+# all appear to assume all parameters *might* be null. Despite that, I enforce
+# non-nullability everywhere it's reasonable to do so, which reflects the underlying
+# semantics: the MiniJinja C ABI idiom is to handle null parameters by just devolving
+# to a no-op (and possibly reporting an error, etc.). In other words, there's no API 
+# like "remove a key-value pair by setting a key's value to `null`" (or similar)—it'd just
+# see a null key and decide to do nothing.
+#
+# For general information about APINotes, see:
+# - Clang documentation: https://clang.llvm.org/docs/APINotes.html
+# - Swift documentation: https://github.com/apple/swift/blob/main/apinotes/README.md
+#
+Name: MiniJinjaC
+Tags:
+- Name: mj_err_kind
+  SwiftName: mj_err_kind
+  EnumKind: NSEnum
+- Name: mj_undefined_behavior
+  SwiftName: mj_undefined_behavior
+  EnumKind: NSEnum
+- Name: mj_value_kind
+  SwiftName: mj_value_kind
+  EnumKind: NSEnum
+Enumerators:
+# mj_err_kind
+- Name: MJ_ERR_KIND_NON_PRIMITIVE
+  SwiftName: mj_err_kind.nonPrimitive
+- Name: MJ_ERR_KIND_NON_KEY
+  SwiftName: mj_err_kind.nonKey
+- Name: MJ_ERR_KIND_INVALID_OPERATION
+  SwiftName: mj_err_kind.invalidOperation
+- Name: MJ_ERR_KIND_SYNTAX_ERROR
+  SwiftName: mj_err_kind.syntaxError
+- Name: MJ_ERR_KIND_TEMPLATE_NOT_FOUND
+  SwiftName: mj_err_kind.templateNotFound
+- Name: MJ_ERR_KIND_TOO_MANY_ARGUMENTS
+  SwiftName: mj_err_kind.tooManyArguments
+- Name: MJ_ERR_KIND_MISSING_ARGUMENT
+  SwiftName: mj_err_kind.missingArgument
+- Name: MJ_ERR_KIND_UNKNOWN_FILTER
+  SwiftName: mj_err_kind.unknownFilter
+- Name: MJ_ERR_KIND_UNKNOWN_FUNCTION
+  SwiftName: mj_err_kind.unknownFunction
+- Name: MJ_ERR_KIND_UNKNOWN_TEST
+  SwiftName: mj_err_kind.unknownTest
+- Name: MJ_ERR_KIND_UNKNOWN_METHOD
+  SwiftName: mj_err_kind.unknownMethod
+- Name: MJ_ERR_KIND_BAD_ESCAPE
+  SwiftName: mj_err_kind.badEscape
+- Name: MJ_ERR_KIND_UNDEFINED_ERROR
+  SwiftName: mj_err_kind.undefinedError
+- Name: MJ_ERROR_KIND_BAD_SERIALIZTION
+  SwiftName: mj_err_kind.badSerialization
+- Name: MJ_ERR_KIND_BAD_INCLUDE
+  SwiftName: mj_err_kind.badInclude
+- Name: MJ_ERR_KIND_EVAL_BLOCK
+  SwiftName: mj_err_kind.evalBlock
+- Name: MJ_ERR_KIND_CANNOT_UNPACK
+  SwiftName: mj_err_kind.cannotUnpack
+- Name: MJ_ERR_KIND_WRITE_FAILURE
+  SwiftName: mj_err_kind.writeFailure
+- Name: MJ_ERR_KIND_UNKNOWN
+  SwiftName: mj_err_kind.unknownErrorKind # not just `unknown` to avoid confusion with `case .unknown: ; @unknown default: `
+# mj_undefined_behavior
+- Name: MJ_UNDEFINED_BEHAVIOR_LENIENT
+  SwiftName: mj_undefined_behavior.lenient
+- Name: MJ_UNDEFINED_BEHAVIOR_STRICT
+  SwiftName: mj_undefined_behavior.strict
+- Name: MJ_UNDEFINED_BEHAVIOR_CHAINABLE
+  SwiftName: mj_undefined_behavior.chainable
+# mj_value_kind
+- Name: MJ_VALUE_KIND_UNDEFINED
+  SwiftName: mj_value_kind.undefined
+- Name: MJ_VALUE_KIND_NONE
+  SwiftName: mj_value_kind.noValue # renamed from `.none` to avoid syntax ambiguity with optionals
+- Name: MJ_VALUE_KIND_BOOL
+  SwiftName: mj_value_kind.bool
+- Name: MJ_VALUE_KIND_NUMBER
+  SwiftName: mj_value_kind.number
+- Name: MJ_VALUE_KIND_STRING
+  SwiftName: mj_value_kind.string
+- Name: MJ_VALUE_KIND_BYTES
+  SwiftName: mj_value_kind.bytes
+- Name: MJ_VALUE_KIND_SEQ
+  SwiftName: mj_value_kind.sequence # renamed from `seq` for swiftiness
+- Name: MJ_VALUE_KIND_MAP
+  SwiftName: mj_value_kind.map
+- Name: MJ_VALUE_KIND_ITERABLE
+  SwiftName: mj_value_kind.iterable
+- Name: MJ_VALUE_KIND_PLAIN
+  SwiftName: mj_value_kind.plain
+- Name: MJ_VALUE_KIND_INVALID
+  SwiftName: mj_value_kind.invalid
+Functions:
+# mj_env functions
+- Name: mj_env_add_template
+  SwiftName: mj_env_add_template(environment:name:source:)
+  # original swift import: mj_env_add_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ source: UnsafePointer<CChar>!) -> Bool
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+  - Position: 2
+    Nullability: N
+- Name: mj_env_clear_templates
+  SwiftName: mj_env_clear_templates(environment:)
+  # original swift import: mj_env_clear_templates(_ env: OpaquePointer!) -> Bool
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_eval_expr
+  # original swift import: mj_env_eval_expr(_ env: OpaquePointer!, _ expr: UnsafePointer<CChar>!, _ ctx: mj_value) -> mj_value
+  SwiftName: mj_env_eval_expr(environment:expression:context:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_env_free
+  # original swift import: mj_env_free(_ env: OpaquePointer!)
+  SwiftName: mj_env_free(environment:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_new
+  # original swift import: mj_env_new() -> OpaquePointer!
+  SwiftName: mj_env_new()
+  ResultType: "mj_env *_Nullable"
+- Name: mj_env_remove_template
+  # original swift import: mj_env_remove_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!) -> Bool
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_env_render_named_str
+  # original swift import: mj_env_render_named_str(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ source: UnsafePointer<CChar>!, _ ctx: mj_value) -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_env_render_named_str(environment:name:source:context:)
+  ResultType: "char *_Nullable"
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+  - Position: 2
+    Nullability: N
+- Name: mj_env_render_template
+  # original swift import: mj_env_render_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ ctx: mj_value) -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_env_render_template(environment:name:context:)
+  ResultType: "char *_Nullable"
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_env_set_debug
+  # original swift import: mj_env_set_debug(_ env: OpaquePointer!, _ val: Bool)
+  SwiftName: mj_env_set_debug(environment:enabled:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_set_keep_trailing_newline
+  # original swift import: mj_env_set_keep_trailing_newline(_ env: OpaquePointer!, _ val: Bool)
+  SwiftName: mj_env_set_keep_trailing_newline(environment:enabled:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_set_lstrip_blocks
+  # original swift import: mj_env_set_lstrip_blocks(_ env: OpaquePointer!, _ val: Bool)
+  SwiftName: mj_env_set_lstrip_blocks(environment:enabled:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_set_recursion_limit
+  # original swift import: mj_env_set_recursion_limit(_ env: OpaquePointer!, _ val: UInt32)
+  SwiftName: mj_env_set_recursion_limit(environment:limit:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_set_syntax_config
+  # original swift import: mj_env_set_syntax_config(_ env: OpaquePointer!, _ syntax: UnsafePointer<mj_syntax_config>!) -> Bool
+  SwiftName: mj_env_set_syntax_config(environment:configuration:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_env_set_trim_blocks
+  # original swift import: mj_env_set_trim_blocks(_ env: OpaquePointer!, _ val: Bool)
+  SwiftName: mj_env_set_trim_blocks(environment:enabled:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_env_set_undefined_behavior
+  # original swift import: mj_env_set_undefined_behavior(_ env: OpaquePointer!, _ val: mj_undefined_behavior)
+  SwiftName: mj_env_set_undefined_behavior(environment:behavior:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+# mj_err functions
+- Name: mj_err_clear
+  # original swift import: mj_err_clear()
+  SwiftName: mj_err_clear()
+- Name: mj_err_get_debug_info
+  # original swift import: mj_err_get_debug_info() -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_err_get_debug_info()
+  ResultType: "char *_Nullable"
+- Name: mj_err_get_detail
+  # original swift import: mj_err_get_detail() -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_err_get_detail()
+  ResultType: "char *_Nullable"
+- Name: mj_err_get_kind
+  # original swift import: mj_err_get_kind() -> mj_err_kind
+  SwiftName: mj_err_get_kind()
+- Name: mj_err_get_line
+  # original swift import: mj_err_get_line() -> UInt32
+  SwiftName: mj_err_get_line()
+- Name: mj_err_get_template_name
+  # original swift import: mj_err_get_template_name() -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_err_get_template_name()  
+  ResultType: "char *_Nullable"
+- Name: mj_err_is_set
+  # original swift import: mj_err_is_set() -> Bool
+  SwiftName: mj_err_is_set()
+- Name: mj_err_print
+  # original swift import: mj_err_print() -> Bool
+  SwiftName: mj_err_print()
+# mj_str functions  
+- Name: mj_str_free
+  # original swift import: mj_str_free(_ s: UnsafeMutablePointer<CChar>!)
+  SwiftName: mj_str_free(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+# mj_syntax_config functions
+- Name: mj_syntax_config_default
+  # original swift import: mj_syntax_config_default(_ syntax: UnsafeMutablePointer<mj_syntax_config>!)
+  SwiftName: mj_syntax_config_default(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+# mj_value functions  
+- Name: mj_value_append
+  # original swift import: mj_value_append(_ slf: UnsafeMutablePointer<mj_value>!, _ value: mj_value) -> Bool
+  SwiftName: mj_value_append(_:value:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_as_bytes
+  # original swift import: mj_value_as_bytes(_ value: mj_value, _ len_out: UnsafeMutablePointer<UInt>!) -> UnsafePointer<CChar>!
+  SwiftName: mj_value_as_bytes(_:length:)
+  ResultType: "char *_Nullable"
+  Parameters:
+  - Position: 1
+    Nullability: N
+- Name: mj_value_as_f64
+  # original swift import: mj_value_as_f64(_ value: mj_value) -> Double
+  SwiftName: mj_value_as_f64(_:)
+- Name: mj_value_as_i64
+  # original swift import: mj_value_as_i64(_ value: mj_value) -> Int64
+  SwiftName: mj_value_as_i64(_:)
+- Name: mj_value_as_u64
+  # original swift import: mj_value_as_u64(_ value: mj_value) -> UInt64
+  SwiftName: mj_value_as_u64(_:)
+- Name: mj_value_dbg
+  # original swift import: mj_value_dbg(_ value: mj_value)
+  SwiftName: mj_value_dbg(_:)
+- Name: mj_value_decref
+  # original swift import: mj_value_decref(_ value: UnsafeMutablePointer<mj_value>!)
+  SwiftName: mj_value_decref(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_get_by_index
+  # original swift import: mj_value_get_by_index(_ value: mj_value, _ idx: UInt64) -> mj_value
+  SwiftName: mj_value_get_by_index(_:index:)
+- Name: mj_value_get_by_str
+  # original swift import: mj_value_get_by_str(_ value: mj_value, _ key: UnsafePointer<CChar>!) -> mj_value
+  SwiftName: mj_value_get_by_str(_:key:)
+  Parameters:
+  - Position: 1
+    Nullability: N
+- Name: mj_value_get_by_value
+  # original swift import: mj_value_get_by_value(_ value: mj_value, _ key: mj_value) -> mj_value
+  SwiftName: mj_value_get_by_value(_:key:)
+- Name: mj_value_get_kind
+  # original swift import: mj_value_get_kind(_ value: mj_value) -> mj_value_kind
+  SwiftName: mj_value_get_kind(_:)
+- Name: mj_value_incref
+  # original swift import: mj_value_incref(_ value: UnsafeMutablePointer<mj_value>!)
+  SwiftName: mj_value_incref(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_is_number
+  # original swift import: mj_value_is_number(_ value: mj_value) -> Bool
+  SwiftName: mj_value_is_number(_:)
+- Name: mj_value_is_true
+  # original swift import: mj_value_is_true(_ value: mj_value) -> Bool
+  SwiftName: mj_value_is_true(_:)
+- Name: mj_value_iter_free
+  # original swift import: mj_value_iter_free(_ iter: OpaquePointer!)
+  SwiftName: mj_value_iter_free(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_iter_next
+  # original swift import: mj_value_iter_next(_ iter: OpaquePointer!, _ val_out: UnsafeMutablePointer<mj_value>!) -> Bool
+  SwiftName: mj_value_iter_next(_:value:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_value_len
+  # original swift import: mj_value_len(_ value: mj_value) -> UInt64
+  SwiftName: mj_value_len(_:)
+- Name: mj_value_new_bool
+  # original swift import: mj_value_new_bool(_ value: Bool) -> mj_value
+  SwiftName: mj_value_new_bool(_:)
+- Name: mj_value_new_bytes
+  # original swift import: mj_value_new_bytes(_ b: UnsafePointer<CChar>!, _ length: UInt) -> mj_value
+  SwiftName: mj_value_new_bytes(_:length:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_new_f32
+  # original swift import: mj_value_new_f32(_ value: Float) -> mj_value
+  SwiftName: mj_value_new_f32(_:)
+- Name: mj_value_new_f64
+  # original swift import: mj_value_new_f64(_ value: Double) -> mj_value
+  SwiftName: mj_value_new_f64(_:)
+- Name: mj_value_new_i32
+  # original swift import: mj_value_new_i32(_ value: Int32) -> mj_value
+  SwiftName: mj_value_new_i32(_:)
+- Name: mj_value_new_i64
+  # original swift import: mj_value_new_i64(_ value: Int64) -> mj_value
+  SwiftName: mj_value_new_i64(_:)
+- Name: mj_value_new_list
+  # original swift import: mj_value_new_list() -> mj_value
+  SwiftName: mj_value_new_list()
+- Name: mj_value_new_none
+  # original swift import: mj_value_new_none() -> mj_value
+  SwiftName: mj_value_new_none()
+- Name: mj_value_new_object
+  # original swift import: mj_value_new_object() -> mj_value
+  SwiftName: mj_value_new_object()
+- Name: mj_value_new_string
+  # original swift import: mj_value_new_string(_ s: UnsafePointer<CChar>!) -> mj_value
+  SwiftName: mj_value_new_string(_:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_new_u32
+  # original swift import: mj_value_new_u32(_ value: UInt32) -> mj_value
+  SwiftName: mj_value_new_u32(_:)
+- Name: mj_value_new_u64
+  # original swift import: mj_value_new_u64(_ value: UInt64) -> mj_value
+  SwiftName: mj_value_new_u64(_:)
+- Name: mj_value_new_undefined
+  # original swift import: mj_value_new_undefined() -> mj_value
+  SwiftName: mj_value_new_undefined()
+- Name: mj_value_set_key
+  # original swift import: mj_value_set_key(_ slf: UnsafeMutablePointer<mj_value>!, _ key: mj_value, _ value: mj_value) -> Bool
+  SwiftName: mj_value_set_key(_:key:value:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+- Name: mj_value_set_string_key
+  # original swift import: mj_value_set_string_key(_ slf: UnsafeMutablePointer<mj_value>!, _ key: UnsafePointer<CChar>!, _ value: mj_value) -> Bool
+  SwiftName: mj_value_set_string_key(_:key:value:)
+  Parameters:
+  - Position: 0
+    Nullability: N
+  - Position: 1
+    Nullability: N
+- Name: mj_value_to_str
+  # original swift import: mj_value_to_str(_ value: mj_value) -> UnsafeMutablePointer<CChar>!
+  SwiftName: mj_value_to_str(_:)
+  ResultType: "char *_Nullable"
+- Name: mj_value_try_iter
+  # original swift import: mj_value_try_iter(_ value: mj_value) -> OpaquePointer!
+  SwiftName: mj_value_try_iter(_:)
+  ResultType: "mj_value_iter *_Nullable"
