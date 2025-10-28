@@ -163,10 +163,11 @@ clone-minijinja version=MINIJINJA_VERSION: clean
         git clone --branch "v{{version}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
     fi
 
-    # Patch minijinja-cabi to build as staticlib instead of cdylib for XCFramework
-    echo "🔧 Patching minijinja-cabi for static library build..."
+    # Patch minijinja-cabi to build as staticlib and enable unicode feature
+    echo "🔧 Patching minijinja-cabi for static library build and unicode support..."
     cd "{{CAPI_DIR}}"
     sed -i '' 's/crate-type = \["cdylib"\]/crate-type = ["staticlib"]/' Cargo.toml
+    sed -i '' 's/features = \["loader", "custom_syntax"\]/features = ["loader", "custom_syntax", "unicode"]/' Cargo.toml
 
 # Install all Rust cross-compilation targets (hierarchical)
 [group('install')]

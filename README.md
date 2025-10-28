@@ -24,6 +24,12 @@ just build
 
 By default, this will build `minijinja` from `main`; you can override this by setting the `MINIJINJA_VERSION` environment variable to a specific release (e.g. `MINIJINJA_VERSION=2.1.0 just build` will build `minijinja`'s 2.1.0 release).
 
+### Features
+
+The XCFramework is built with the following minijinja features enabled:
+
+- **unicode**: Provides Unicode support for identifiers, attribute names, and Unicode-aware case-insensitive sorting. This feature is always enabled as it's the right choice for Swift interoperability and international use.
+
 ### Platforms and Rust Tiers
 
 The XCFramework is built for the following Apple platforms:
