@@ -13,6 +13,45 @@ STABLE_TOOLCHAIN := env_var_or_default('MINIJINJA_STABLE_TOOLCHAIN', '1.90.0')
 # TODO: Pin to specific date after testing
 NIGHTLY_TOOLCHAIN := env_var_or_default('MINIJINJA_NIGHTLY_TOOLCHAIN', 'nightly')
 
+# Optimization settings (can be overridden via environment variables for experimentation)
+# =======================================================================================
+#
+# These settings control Rust compiler optimizations for release builds. The defaults
+# prioritize performance while still enabling aggressive LTO and single-codegen-unit
+# optimization for cross-function optimizations and reasonable binary sizes.
+#
+# To experiment with different settings, set the corresponding environment variables:
+#
+#   MINIJINJA_OPT_LEVEL      - Optimization level: 0, 1, 2, 3, s (size), z (size, more aggressive)
+#   MINIJINJA_LTO            - Link-time optimization: false, true, thin, fat
+#   MINIJINJA_CODEGEN_UNITS  - Number of codegen units (1 = max optimization, slower builds)
+#   MINIJINJA_STRIP          - Strip symbols: none, debuginfo, symbols, true
+#   MINIJINJA_DEBUGINFO      - Debug info level: 0 (none), 1 (line tables), 2 (full)
+#
+# Example: Build with different optimization settings
+#   MINIJINJA_OPT_LEVEL=s MINIJINJA_LTO=thin just build-ios
+#
+# To measure the impact of optimization changes:
+#   just compare-optimizations        # Compare baseline vs optimized (recommended)
+#
+# Or manually:
+#   1. just benchmark-baseline        # Run benchmarks with current settings
+#   2. Change settings via env vars
+#   3. just benchmark-compare         # Compare against baseline
+#   4. just measure-size              # Check binary size impact
+#
+# Note: Current defaults (opt-level=3, lto=fat, codegen-units=1) prioritize performance.
+# These can be revisited once the Swift wrapper has integration-level benchmarks that
+# better capture real-world usage patterns and instruction-cache effects.
+#
+# See: https://doc.rust-lang.org/cargo/reference/profiles.html
+#
+CARGO_OPT_LEVEL := env_var_or_default('MINIJINJA_OPT_LEVEL', '3')          # Performance optimization
+CARGO_LTO := env_var_or_default('MINIJINJA_LTO', 'fat')                    # Full link-time optimization
+CARGO_CODEGEN_UNITS := env_var_or_default('MINIJINJA_CODEGEN_UNITS', '1')  # Maximum optimization (slower builds)
+CARGO_STRIP := env_var_or_default('MINIJINJA_STRIP', 'true')               # Strip symbols
+CARGO_DEBUGINFO := env_var_or_default('MINIJINJA_DEBUGINFO', '0')          # Debug info level (0=none, 1=line-tables, 2=full)
+
 # Directory paths
 ROOT_DIR := justfile_directory()
 BUILD_DIR := ROOT_DIR / "build"
@@ -395,8 +434,14 @@ _build-tier2 TARGET PLATFORM SDK ARCH:
     export WATCHOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
     export VISIONOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
 
-    # Enable debug symbols
-    export RUSTFLAGS="-C debuginfo=2"
+    # Set Cargo profile optimization settings
+    export CARGO_PROFILE_RELEASE_OPT_LEVEL={{CARGO_OPT_LEVEL}}
+    export CARGO_PROFILE_RELEASE_LTO={{CARGO_LTO}}
+    export CARGO_PROFILE_RELEASE_CODEGEN_UNITS={{CARGO_CODEGEN_UNITS}}
+    export CARGO_PROFILE_RELEASE_STRIP={{CARGO_STRIP}}
+
+    # Set debug info level via RUSTFLAGS
+    export RUSTFLAGS="-C debuginfo={{CARGO_DEBUGINFO}}"
 
     # Build the C API crate
     cd "{{CAPI_DIR}}"
@@ -435,8 +480,14 @@ _build-tier3 TARGET PLATFORM SDK ARCH:
     export WATCHOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
     export VISIONOS_DEPLOYMENT_TARGET={{MINIMUM_DEPLOYMENT_TARGET}}
 
-    # Enable debug symbols
-    export RUSTFLAGS="-C debuginfo=2"
+    # Set Cargo profile optimization settings
+    export CARGO_PROFILE_RELEASE_OPT_LEVEL={{CARGO_OPT_LEVEL}}
+    export CARGO_PROFILE_RELEASE_LTO={{CARGO_LTO}}
+    export CARGO_PROFILE_RELEASE_CODEGEN_UNITS={{CARGO_CODEGEN_UNITS}}
+    export CARGO_PROFILE_RELEASE_STRIP={{CARGO_STRIP}}
+
+    # Set debug info level via RUSTFLAGS
+    export RUSTFLAGS="-C debuginfo={{CARGO_DEBUGINFO}}"
 
     # Build the C API crate
     cd "{{CAPI_DIR}}"
@@ -531,3 +582,169 @@ _verify-module PLATFORM ARCH SDK:
         echo "❌ Module verification failed"
         exit 1
     fi
+
+# Benchmarking Commands
+# =====================
+# These commands are useful for measuring the impact of optimization settings.
+# Run benchmark-baseline with your current settings, then change settings and
+# run benchmark-compare to see the performance impact.
+
+# Run benchmarks and save as baseline for comparison
+[group('benchmark')]
+benchmark-baseline:
+    #!/usr/bin/env bash
+    echo "📊 Running benchmarks and saving as baseline..."
+    set -e
+    if [ ! -d "{{MINIJINJA_DIR}}/benchmarks" ]; then
+        echo "❌ Error: benchmarks directory not found. Run 'just clone-minijinja' first."
+        exit 1
+    fi
+    cd "{{MINIJINJA_DIR}}/benchmarks"
+    cargo bench --save-baseline before
+    echo "✅ Baseline benchmarks saved"
+
+# Run benchmarks and compare against saved baseline
+[group('benchmark')]
+benchmark-compare:
+    #!/usr/bin/env bash
+    echo "📊 Running benchmarks and comparing against baseline..."
+    set -e
+    if [ ! -d "{{MINIJINJA_DIR}}/benchmarks" ]; then
+        echo "❌ Error: benchmarks directory not found. Run 'just clone-minijinja' first."
+        exit 1
+    fi
+    cd "{{MINIJINJA_DIR}}/benchmarks"
+    cargo bench --baseline before
+    echo "✅ Benchmark comparison complete"
+
+# Measure and display binary sizes
+[group('benchmark')]
+measure-size:
+    #!/usr/bin/env bash
+    echo "📏 Measuring binary sizes..."
+    set -e
+    echo ""
+    echo "Looking for libminijinja_cabi.a files:"
+    find "{{MINIJINJA_DIR}}/target" -name "libminijinja_cabi.a" -type f -exec ls -lh {} \; 2>/dev/null || echo "No binaries found. Run a build first."
+    echo ""
+
+# Compare baseline vs optimized settings (binary size & benchmark performance)
+[group('benchmark')]
+compare-optimizations:
+    #!/usr/bin/env bash
+    set -e
+
+    # Check prerequisites
+    if [ ! -d "{{MINIJINJA_DIR}}" ]; then
+        echo "❌ Error: minijinja not found. Run 'just clone-minijinja' first."
+        exit 1
+    fi
+
+    echo "🔬 Comparing baseline vs optimized settings..."
+    echo ""
+    echo "This will:"
+    echo "  1. Build with baseline settings (opt-level=3, lto=thin, codegen-units=16)"
+    echo "  2. Measure size & run benchmarks"
+    echo "  3. Build with optimized settings (opt-level=z, lto=fat, codegen-units=1)"
+    echo "  4. Measure size & run benchmarks"
+    echo "  5. Show comparison"
+    echo ""
+    echo "⏱️  This may take several minutes..."
+    echo ""
+
+    cd "{{CAPI_DIR}}"
+
+    # ===== BASELINE BUILD =====
+    echo "📦 [1/4] Building with baseline settings..."
+    export CARGO_PROFILE_RELEASE_OPT_LEVEL=3
+    export CARGO_PROFILE_RELEASE_LTO=thin
+    export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16
+    export CARGO_PROFILE_RELEASE_STRIP=false
+
+    cargo clean --quiet 2>&1 | grep -v "Removing" || true
+    cargo build --release --quiet 2>&1 > /dev/null
+
+    BASELINE_SIZE=$(stat -f%z "{{MINIJINJA_DIR}}/target/release/libminijinja_cabi.a" 2>/dev/null || echo "0")
+
+    # ===== BASELINE BENCHMARKS =====
+    echo "📊 [2/4] Running baseline benchmarks..."
+    cd "{{MINIJINJA_DIR}}/benchmarks"
+    BASELINE_BENCH=$(cargo bench --quiet 2>&1 | grep -E "time:|change:" | head -20)
+
+    # ===== OPTIMIZED BUILD =====
+    echo "📦 [3/4] Building with optimized settings..."
+    cd "{{CAPI_DIR}}"
+    export CARGO_PROFILE_RELEASE_OPT_LEVEL=z
+    export CARGO_PROFILE_RELEASE_LTO=fat
+    export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+    export CARGO_PROFILE_RELEASE_STRIP=true
+
+    cargo clean --quiet 2>&1 | grep -v "Removing" || true
+    cargo build --release --quiet 2>&1 > /dev/null
+
+    OPTIMIZED_SIZE=$(stat -f%z "{{MINIJINJA_DIR}}/target/release/libminijinja_cabi.a" 2>/dev/null || echo "0")
+
+    # ===== OPTIMIZED BENCHMARKS =====
+    echo "📊 [4/4] Running optimized benchmarks..."
+    cd "{{MINIJINJA_DIR}}/benchmarks"
+    OPTIMIZED_BENCH=$(cargo bench --quiet 2>&1 | grep -E "time:|change:" | head -20)
+
+    # Helper function to format bytes (macOS-compatible)
+    format_bytes() {
+        local bytes=$1
+        local awk_script='
+        {
+            if ($1 >= 1073741824) printf "%.1fG", $1/1073741824
+            else if ($1 >= 1048576) printf "%.1fM", $1/1048576
+            else if ($1 >= 1024) printf "%.1fK", $1/1024
+            else printf "%dB", $1
+        }'
+        echo "$bytes" | awk "$awk_script"
+    }
+
+    # ===== RESULTS =====
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📊 COMPARISON RESULTS"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Binary size comparison
+    BASELINE_FMT=$(format_bytes $BASELINE_SIZE)
+    OPTIMIZED_FMT=$(format_bytes $OPTIMIZED_SIZE)
+
+    echo "📦 BINARY SIZE (libminijinja_cabi.a)"
+    echo "  Baseline:  $BASELINE_FMT ($BASELINE_SIZE bytes)"
+    echo "             Settings: opt-level=3, lto=thin, codegen-units=16"
+    echo ""
+    echo "  Optimized: $OPTIMIZED_FMT ($OPTIMIZED_SIZE bytes)"
+    echo "             Settings: opt-level=z, lto=fat, codegen-units=1"
+    echo ""
+
+    DIFF=$((OPTIMIZED_SIZE - BASELINE_SIZE))
+    PERCENT=$(echo "scale=1; ($DIFF * 100.0) / $BASELINE_SIZE" | bc)
+
+    if [ $DIFF -lt 0 ]; then
+        SAVED=$((BASELINE_SIZE - OPTIMIZED_SIZE))
+        SAVED_FMT=$(format_bytes $SAVED)
+        echo "  📉 Size reduced by $SAVED_FMT ($SAVED bytes, ${PERCENT}% smaller)"
+    else
+        DIFF_FMT=$(format_bytes $DIFF)
+        echo "  📈 Size increased by $DIFF_FMT ($DIFF bytes, +${PERCENT}%)"
+    fi
+
+    echo ""
+    echo "⚡ BENCHMARK PERFORMANCE"
+    echo ""
+    echo "Baseline results:"
+    echo "$BASELINE_BENCH" | sed 's/^/  /'
+    echo ""
+    echo "Optimized results:"
+    echo "$OPTIMIZED_BENCH" | sed 's/^/  /'
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "💡 TIP: For detailed benchmark comparison, run:"
+    echo "   just benchmark-baseline    # with one set of settings"
+    echo "   just benchmark-compare     # after changing settings"
+    echo ""
