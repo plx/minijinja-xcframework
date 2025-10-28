@@ -64,3 +64,5 @@ fastlane/test_output
 # rust & build locations 
 build/
 output/
+.DS_Store
+.swiftpm

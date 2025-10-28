@@ -24,6 +24,12 @@ just build
 
 By default, this will build `minijinja` from `main`; you can override this by setting the `MINIJINJA_VERSION` environment variable to a specific release (e.g. `MINIJINJA_VERSION=2.1.0 just build` will build `minijinja`'s 2.1.0 release).
 
+### Features
+
+The XCFramework is built with the following minijinja features enabled:
+
+- **unicode**: Provides Unicode support for identifiers, attribute names, and Unicode-aware case-insensitive sorting. This feature is always enabled as it's the right choice for Swift interoperability and international use.
+
 ### Platforms and Rust Tiers
 
 The XCFramework is built for the following Apple platforms:
@@ -46,6 +52,32 @@ The "tiers" refer to the platform's status in the Rust ecosystem; [per the rustc
 [^1]: Quoted exactly, but reordered for clarity.
 
 As such, please take note that `minijinja-xcframework`, itself, inherits those guarantees on a platform-by-platform basis.
+
+### Module Verification
+
+The build process includes automatic Clang module verification to ensure proper modularization:
+
+- A `module.modulemap` file is included with each platform build
+- After building and creating fat binaries, the build system runs `just verify-modules`
+- Verification uses Clang's `-fmodules` and `-fmodules-validate-system-headers` flags
+- Each platform's module is tested by attempting to import it in a test Objective-C file
+
+You can run module verification separately:
+
+```bash
+# Verify all modules (after building)
+just verify-modules
+
+# Verify specific platform modules
+just verify-ios-modules
+just verify-macos-modules
+just verify-catalyst-modules
+just verify-tvos-modules
+just verify-watchos-modules
+just verify-visionos-modules
+```
+
+This ensures that the headers are properly modularized and can be imported from Swift and Objective-C code.
 
 ### Future Directions
 
