@@ -9,6 +9,9 @@ on:
 jobs:
   check-and-sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push tags
+      issues: write    # Required to create issues
     steps:
       - uses: actions/checkout@v4
         with:
