@@ -100,7 +100,7 @@ jobs:
           body: |
             ## minijinja XCFramework v${{ steps.version.outputs.version }}
 
-            This release packages [minijinja v${{ steps.version.outputs.version }}](https://github.com/mitsuhiko/minijinja/releases/tag/v${{ steps.version.outputs.version }}) as an XCFramework.
+            This release packages [minijinja v${{ steps.version.outputs.version }}](https://github.com/mitsuhiko/minijinja/releases/tag/${{ steps.version.outputs.version }}) as an XCFramework.
 
             ### Installation
 

@@ -160,7 +160,7 @@ clone-minijinja version=MINIJINJA_VERSION: clean
     if [ "{{version}}" == "main" ]; then
         git clone https://github.com/mitsuhiko/minijinja.git
     else
-        git clone --branch "v{{version}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
+        git clone --branch "{{version}}" --depth 1 https://github.com/mitsuhiko/minijinja.git
     fi
 
     # Patch minijinja-cabi to build as staticlib and enable unicode feature
