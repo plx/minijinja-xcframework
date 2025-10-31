@@ -50,6 +50,8 @@ jobs:
     needs: check-release
     if: needs.check-release.outputs.should-build == 'true' || github.event_name == 'push'
     runs-on: macos-latest
+    permissions:
+      contents: write  # Required to create releases
     steps:
       - uses: actions/checkout@v4
 
