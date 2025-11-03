@@ -141,7 +141,7 @@ Enumerators:
 Functions:
 # mj_env functions
 - Name: mj_env_add_template
-  SwiftName: mj_env_add_template(environment:name:source:)
+  SwiftName: mj_env_add_template(_:name:source:)
   # original swift import: mj_env_add_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ source: UnsafePointer<CChar>!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L119
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L32
@@ -153,7 +153,7 @@ Functions:
   - Position: 2
     Nullability: N
 - Name: mj_env_clear_templates
-  SwiftName: mj_env_clear_templates(environment:)
+  SwiftName: mj_env_clear_templates(_:)
   # original swift import: mj_env_clear_templates(_ env: OpaquePointer!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L125
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L62
@@ -164,7 +164,7 @@ Functions:
   # original swift import: mj_env_eval_expr(_ env: OpaquePointer!, _ expr: UnsafePointer<CChar>!, _ ctx: mj_value) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L131
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L113
-  SwiftName: mj_env_eval_expr(environment:expression:context:)
+  SwiftName: mj_env_eval_expr(_:expression:context:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -174,7 +174,7 @@ Functions:
   # original swift import: mj_env_free(_ env: OpaquePointer!)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L138
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L21
-  SwiftName: mj_env_free(environment:)
+  SwiftName: mj_env_free(_:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -188,6 +188,7 @@ Functions:
   # original swift import: mj_env_remove_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L148
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L50
+  SwiftName: mj_env_remove_template(_:name:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -197,7 +198,7 @@ Functions:
   # original swift import: mj_env_render_named_str(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ source: UnsafePointer<CChar>!, _ ctx: mj_value) -> UnsafeMutablePointer<CChar>!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L154
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L93
-  SwiftName: mj_env_render_named_str(environment:name:source:context:)
+  SwiftName: mj_env_render_named_str(_:name:source:context:)
   ResultType: "char *_Nullable"
   Parameters:
   - Position: 0
@@ -210,7 +211,7 @@ Functions:
   # original swift import: mj_env_render_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ ctx: mj_value) -> UnsafeMutablePointer<CChar>!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L163
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L75
-  SwiftName: mj_env_render_template(environment:name:context:)
+  SwiftName: mj_env_render_template(_:name:context:)
   ResultType: "char *_Nullable"
   Parameters:
   - Position: 0
@@ -221,7 +222,7 @@ Functions:
   # original swift import: mj_env_set_debug(_ env: OpaquePointer!, _ val: Bool)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L170
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L235
-  SwiftName: mj_env_set_debug(environment:enabled:)
+  SwiftName: mj_env_set_debug(_:enabled:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -229,7 +230,7 @@ Functions:
   # original swift import: mj_env_set_keep_trailing_newline(_ env: OpaquePointer!, _ val: Bool)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L175
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L149
-  SwiftName: mj_env_set_keep_trailing_newline(environment:enabled:)
+  SwiftName: mj_env_set_keep_trailing_newline(_:enabled:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -237,7 +238,7 @@ Functions:
   # original swift import: mj_env_set_lstrip_blocks(_ env: OpaquePointer!, _ val: Bool)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L180
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L135
-  SwiftName: mj_env_set_lstrip_blocks(environment:enabled:)
+  SwiftName: mj_env_set_lstrip_blocks(_:enabled:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -245,7 +246,7 @@ Functions:
   # original swift import: mj_env_set_recursion_limit(_ env: OpaquePointer!, _ val: UInt32)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L185
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L242
-  SwiftName: mj_env_set_recursion_limit(environment:limit:)
+  SwiftName: mj_env_set_recursion_limit(_:limit:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -253,7 +254,7 @@ Functions:
   # original swift import: mj_env_set_syntax_config(_ env: OpaquePointer!, _ syntax: UnsafePointer<mj_syntax_config>!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L191
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L169
-  SwiftName: mj_env_set_syntax_config(environment:configuration:)
+  SwiftName: mj_env_set_syntax_config(_:configuration:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -263,7 +264,7 @@ Functions:
   # original swift import: mj_env_set_trim_blocks(_ env: OpaquePointer!, _ val: Bool)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L197
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L142
-  SwiftName: mj_env_set_trim_blocks(environment:enabled:)
+  SwiftName: mj_env_set_trim_blocks(_:enabled:)
   Parameters:
   - Position: 0
     Nullability: N
@@ -271,7 +272,7 @@ Functions:
   # original swift import: mj_env_set_undefined_behavior(_ env: OpaquePointer!, _ val: mj_undefined_behavior)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L203
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L224
-  SwiftName: mj_env_set_undefined_behavior(environment:behavior:)
+  SwiftName: mj_env_set_undefined_behavior(_:behavior:)
   Parameters:
   - Position: 0
     Nullability: N
