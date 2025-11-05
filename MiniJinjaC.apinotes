@@ -142,6 +142,7 @@ Functions:
 # mj_env functions
 - Name: mj_env_add_template
   SwiftName: mj_env_add_template(_:name:source:)
+  # SwiftSafety: unsafe
   # original swift import: mj_env_add_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!, _ source: UnsafePointer<CChar>!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L119
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L32
@@ -154,6 +155,7 @@ Functions:
     Nullability: N
 - Name: mj_env_clear_templates
   SwiftName: mj_env_clear_templates(_:)
+  # SwiftSafety: unsafe
   # original swift import: mj_env_clear_templates(_ env: OpaquePointer!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L125
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L62
@@ -165,6 +167,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L131
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L113
   SwiftName: mj_env_eval_expr(_:expression:context:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -175,6 +178,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L138
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L21
   SwiftName: mj_env_free(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -183,12 +187,14 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L143
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L14
   SwiftName: mj_env_new()
+  # SwiftSafety: unsafe
   ResultType: "mj_env *_Nullable"
 - Name: mj_env_remove_template
   # original swift import: mj_env_remove_template(_ env: OpaquePointer!, _ name: UnsafePointer<CChar>!) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L148
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L50
   SwiftName: mj_env_remove_template(_:name:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -199,6 +205,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L154
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L93
   SwiftName: mj_env_render_named_str(_:name:source:context:)
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
   Parameters:
   - Position: 0
@@ -212,6 +219,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L163
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L75
   SwiftName: mj_env_render_template(_:name:context:)
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
   Parameters:
   - Position: 0
@@ -223,6 +231,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L170
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L235
   SwiftName: mj_env_set_debug(_:enabled:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -231,6 +240,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L175
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L149
   SwiftName: mj_env_set_keep_trailing_newline(_:enabled:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -239,6 +249,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L180
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L135
   SwiftName: mj_env_set_lstrip_blocks(_:enabled:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -247,6 +258,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L185
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L242
   SwiftName: mj_env_set_recursion_limit(_:limit:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -255,6 +267,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L191
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L169
   SwiftName: mj_env_set_syntax_config(_:configuration:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -265,6 +278,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L197
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L142
   SwiftName: mj_env_set_trim_blocks(_:enabled:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -273,6 +287,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L203
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L224
   SwiftName: mj_env_set_undefined_behavior(_:behavior:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -282,50 +297,59 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L209
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L21
   SwiftName: mj_err_clear()
+  # SwiftSafety: unsafe
 - Name: mj_err_get_debug_info
   # original swift import: mj_err_get_debug_info() -> UnsafeMutablePointer<CChar>!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L214
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L56
   SwiftName: mj_err_get_debug_info()
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
 - Name: mj_err_get_detail
   # original swift import: mj_err_get_detail() -> UnsafeMutablePointer<CChar>!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L219
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L92
   SwiftName: mj_err_get_detail()
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
 - Name: mj_err_get_kind
   # original swift import: mj_err_get_kind() -> mj_err_kind
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L224
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L180
   SwiftName: mj_err_get_kind()
+  # SwiftSafety: unsafe
 - Name: mj_err_get_line
   # original swift import: mj_err_get_line() -> UInt32
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L229
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L120
   SwiftName: mj_err_get_line()
+  # SwiftSafety: unsafe
 - Name: mj_err_get_template_name
   # original swift import: mj_err_get_template_name() -> UnsafeMutablePointer<CChar>!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L234
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L107
   SwiftName: mj_err_get_template_name()
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
 - Name: mj_err_is_set
   # original swift import: mj_err_is_set() -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L239
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L15
   SwiftName: mj_err_is_set()
+  # SwiftSafety: unsafe
 - Name: mj_err_print
   # original swift import: mj_err_print() -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L244
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/error.rs#L27
   SwiftName: mj_err_print()
+  # SwiftSafety: unsafe
 # mj_str functions
 - Name: mj_str_free
   # original swift import: mj_str_free(_ s: UnsafeMutablePointer<CChar>!)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L249
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L126
   SwiftName: mj_str_free(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -335,6 +359,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L254
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/env.rs#L199
   SwiftName: mj_syntax_config_default(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -344,6 +369,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L259
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L214
   SwiftName: mj_value_append(_:value:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -352,6 +378,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L264
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L294
   SwiftName: mj_value_as_bytes(_:length:)
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
   Parameters:
   - Position: 1
@@ -361,26 +388,31 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L270
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L320
   SwiftName: mj_value_as_f64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_as_i64
   # original swift import: mj_value_as_i64(_ value: mj_value) -> Int64
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L275
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L306
   SwiftName: mj_value_as_i64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_as_u64
   # original swift import: mj_value_as_u64(_ value: mj_value) -> UInt64
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L280
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L313
   SwiftName: mj_value_as_u64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_dbg
   # original swift import: mj_value_dbg(_ value: mj_value)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L285
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L423
   SwiftName: mj_value_dbg(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_decref
   # original swift import: mj_value_decref(_ value: UnsafeMutablePointer<mj_value>!)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L290
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L415
   SwiftName: mj_value_decref(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -389,11 +421,13 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L295
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L348
   SwiftName: mj_value_get_by_index(_:index:)
+  # SwiftSafety: unsafe
 - Name: mj_value_get_by_str
   # original swift import: mj_value_get_by_str(_ value: mj_value, _ key: UnsafePointer<CChar>!) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L301
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L355
   SwiftName: mj_value_get_by_str(_:key:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 1
     Nullability: N
@@ -402,16 +436,19 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L307
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L367
   SwiftName: mj_value_get_by_value(_:key:)
+  # SwiftSafety: unsafe
 - Name: mj_value_get_kind
   # original swift import: mj_value_get_kind(_ value: mj_value) -> mj_value_kind
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L313
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L272
   SwiftName: mj_value_get_kind(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_incref
   # original swift import: mj_value_incref(_ value: UnsafeMutablePointer<mj_value>!)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L318
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L407
   SwiftName: mj_value_incref(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -420,16 +457,19 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L323
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L334
   SwiftName: mj_value_is_number(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_is_true
   # original swift import: mj_value_is_true(_ value: mj_value) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L328
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L327
   SwiftName: mj_value_is_true(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_iter_free
   # original swift import: mj_value_iter_free(_ iter: OpaquePointer!)
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L333
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L400
   SwiftName: mj_value_iter_free(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -438,6 +478,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L338
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L384
   SwiftName: mj_value_iter_next(_:value:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -448,16 +489,19 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L344
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L341
   SwiftName: mj_value_len(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_bool
   # original swift import: mj_value_new_bool(_ value: Bool) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L349
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L116
   SwiftName: mj_value_new_bool(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_bytes
   # original swift import: mj_value_new_bytes(_ b: UnsafePointer<CChar>!, _ length: UInt) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L354
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L105
   SwiftName: mj_value_new_bytes(_:length:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -466,41 +510,49 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L359
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L151
   SwiftName: mj_value_new_f32(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_f64
   # original swift import: mj_value_new_f64(_ value: Double) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L364
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L158
   SwiftName: mj_value_new_f64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_i32
   # original swift import: mj_value_new_i32(_ value: Int32) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L369
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L130
   SwiftName: mj_value_new_i32(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_i64
   # original swift import: mj_value_new_i64(_ value: Int64) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L374
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L144
   SwiftName: mj_value_new_i64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_list
   # original swift import: mj_value_new_list() -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L379
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L172
   SwiftName: mj_value_new_list()
+  # SwiftSafety: unsafe
 - Name: mj_value_new_none
   # original swift import: mj_value_new_none() -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L384
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L84
   SwiftName: mj_value_new_none()
+  # SwiftSafety: unsafe
 - Name: mj_value_new_object
   # original swift import: mj_value_new_object() -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L389
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L165
   SwiftName: mj_value_new_object()
+  # SwiftSafety: unsafe
 - Name: mj_value_new_string
   # original swift import: mj_value_new_string(_ s: UnsafePointer<CChar>!) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L394
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L98
   SwiftName: mj_value_new_string(_:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -509,21 +561,25 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L399
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L123
   SwiftName: mj_value_new_u32(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_u64
   # original swift import: mj_value_new_u64(_ value: UInt64) -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L404
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L137
   SwiftName: mj_value_new_u64(_:)
+  # SwiftSafety: unsafe
 - Name: mj_value_new_undefined
   # original swift import: mj_value_new_undefined() -> mj_value
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L409
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L91
   SwiftName: mj_value_new_undefined()
+  # SwiftSafety: unsafe
 - Name: mj_value_set_key
   # original swift import: mj_value_set_key(_ slf: UnsafeMutablePointer<mj_value>!, _ key: mj_value, _ value: mj_value) -> Bool
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L415
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L195
   SwiftName: mj_value_set_key(_:key:value:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -532,6 +588,7 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L423
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L181
   SwiftName: mj_value_set_string_key(_:key:value:)
+  # SwiftSafety: unsafe
   Parameters:
   - Position: 0
     Nullability: N
@@ -542,10 +599,12 @@ Functions:
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L430
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L281
   SwiftName: mj_value_to_str(_:)
+  # SwiftSafety: unsafe
   ResultType: "char *_Nullable"
 - Name: mj_value_try_iter
   # original swift import: mj_value_try_iter(_ value: mj_value) -> OpaquePointer!
   # c declaration: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/include/minijinja.h#L435
   # rust fn: https://github.com/mitsuhiko/minijinja/blob/50d24fb53dd8217b63fea776e697d65cc58df49f/minijinja-cabi/src/value.rs#L377
   SwiftName: mj_value_try_iter(_:)
+  # SwiftSafety: unsafe
   ResultType: "mj_value_iter *_Nullable"
