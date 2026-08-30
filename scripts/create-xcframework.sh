@@ -4,6 +4,8 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
 require_tool lipo
+require_tool jq
+require_tool plutil
 require_tool shasum
 require_tool xcodebuild
 require_file "$TARGETS_FILE"
@@ -61,6 +63,10 @@ xcodebuild -create-xcframework \
   -library "$PLATFORMS_DIR/visionos/lib/$LIBRARY_NAME" -headers "$PLATFORMS_DIR/visionos/include" \
   -library "$PLATFORMS_DIR/visionos-simulator/lib/$LIBRARY_NAME" -headers "$PLATFORMS_DIR/visionos-simulator/include" \
   -output "$OUTPUT_DIR/$XCFRAMEWORK_NAME"
+
+info_plist="$OUTPUT_DIR/$XCFRAMEWORK_NAME/Info.plist"
+sorted_libraries=$(plutil -extract AvailableLibraries json -o - "$info_plist" | jq -ce 'sort_by(.LibraryIdentifier)')
+plutil -replace AvailableLibraries -json "$sorted_libraries" "$info_plist"
 
 "$ROOT_DIR/scripts/write-licenses.sh"
 

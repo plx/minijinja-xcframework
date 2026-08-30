@@ -63,7 +63,7 @@ The release asset is `MiniJinjaC.xcframework.zip`, containing
 ```swift
 .binaryTarget(
   name: "MiniJinjaC",
-  url: "https://github.com/plx/minijinja-xcframework/releases/download/minijinja-2.24.0-1/MiniJinjaC.xcframework.zip",
+  url: "https://github.com/plx/minijinja-xcframework/releases/download/minijinja-2.24.0-2/MiniJinjaC.xcframework.zip",
   checksum: "<value from the release>"
 )
 ```
@@ -128,8 +128,10 @@ when the C header changes.
 ## Packaging and provenance
 
 `just package` normalizes archive timestamps to the source commit time and uses
-a metadata-free, sorted zip input. On the same Xcode/Rust environment this makes
-the package reproducible. The `output` directory contains:
+a metadata-free, sorted zip input. XCFramework creation also canonicalizes
+`AvailableLibraries` by `LibraryIdentifier`, removing nondeterministic array
+ordering from Xcode's generated `Info.plist`. On the same Xcode/Rust environment
+this makes the package reproducible. The `output` directory contains:
 
 - `MiniJinjaC.xcframework.zip`
 - SHA-256 and SwiftPM checksum files plus `MiniJinjaC.checksums.json`
@@ -153,8 +155,9 @@ shasum -a 256 -c MiniJinjaC.xcframework.zip.sha256
 
 Source tags and binary-artifact tags have independent namespaces. Releases use
 `minijinja-<source-version>-<artifact-revision>`; the first 2.24.0 artifact is
-therefore `minijinja-2.24.0-1`. This leaves historical `v<source-version>` tags
-untouched and permits a new artifact revision without moving a published tag.
+therefore `minijinja-2.24.0-1`, while the canonicalized artifact is revision 2.
+This leaves historical `v<source-version>` tags untouched and permits a new
+artifact revision without moving a published tag.
 The workflow refuses to publish through an existing tag unless that tag points
 at the exact pipeline commit being run; select the next artifact revision when
 the pipeline changes.

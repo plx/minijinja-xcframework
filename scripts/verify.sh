@@ -85,6 +85,8 @@ plutil -lint "$OUTPUT_DIR/$XCFRAMEWORK_NAME/Info.plist"
 plutil -convert json -o "$temporary_dir/Info.json" "$OUTPUT_DIR/$XCFRAMEWORK_NAME/Info.plist"
 available_library_count=$(jq '.AvailableLibraries | length' "$temporary_dir/Info.json")
 [ "$available_library_count" -eq 10 ] || die "XCFramework contains $available_library_count libraries; expected 10"
+jq -e '.AvailableLibraries == (.AvailableLibraries | sort_by(.LibraryIdentifier))' "$temporary_dir/Info.json" >/dev/null ||
+  die "XCFramework AvailableLibraries are not in canonical LibraryIdentifier order"
 jq -e '
   def hasSlice($platform; $variant; $architectures):
     any(.AvailableLibraries[];
