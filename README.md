@@ -1,89 +1,165 @@
-# minijinja-xcframework
+# MiniJinjaC XCFramework
 
-This repository contains a justfile "build script" that will clone-and-build [minijinja](https://github.com/mitsuhiko/minijinja) as an XCFramework, suitable for use in Swift Package Manager.
+This repository builds MiniJinja's experimental C ABI as a static, multi-platform
+XCFramework for Swift Package Manager. The distributed module is named
+`MiniJinjaC`; it is intended to sit behind the native Swift API in
+[`hdxl-swift-minijinja`](https://github.com/plx/hdxl-swift-minijinja).
 
-It also contains Github Actions workflows to automatically build and publish new releases whenever a new minijinja version is released.
+The default build is deliberately immutable:
 
-This repository exists to facilitate development of its sister project, [hdxl-swift-minijinja](https://github.com/plx/hdxl-swift-minijinja), but the justfile build system may be useful for others as well.
+- source: [`plx/minijinja`](https://github.com/plx/minijinja)
+- ref: `2.24.0`
+- commit: `0ca749f7ba507514fa6b052c74130ae6ae472e03`
+- stable Rust: `1.90.0`
+- nightly Rust: `nightly-2025-11-04`
 
-## Prerequisites
+The fork's `2.24.0` tag is synchronized to the official upstream commit. The
+repository, ref, and expected commit remain configurable for experiments and
+future major-version evaluation.
 
-- macOS 26.0+ with Xcode installed
-- Rustup installed
-- [just](https://github.com/casey/just) command runner
+## Build
 
-## Building
+Requirements are a Mac with Xcode 26.6 or newer, `rustup`, and
+[`just`](https://github.com/casey/just). A complete clean build is:
 
-### Build Everything
-
-To build the complete XCFramework:
-
-```bash
+```sh
 just build
 ```
 
-By default, this will build `minijinja` from `main`; you can override this by setting the `MINIJINJA_VERSION` environment variable to a specific release (e.g. `MINIJINJA_VERSION=2.1.0 just build` will build `minijinja`'s 2.1.0 release).
+That command installs the pinned Rust toolchains, fetches and verifies the exact
+source commit, builds every architecture, creates and verifies the XCFramework,
+runs a SwiftPM integration test, and packages the release artifacts.
 
-### Features
+To build a different immutable revision:
 
-The XCFramework is built with the following minijinja features enabled:
-
-- **unicode**: Provides Unicode support for identifiers, attribute names, and Unicode-aware case-insensitive sorting. This feature is always enabled as it's the right choice for Swift interoperability and international use.
-
-### Platforms and Rust Tiers
-
-The XCFramework is built for the following Apple platforms:
-
-- macOS (tier 1)
-- iOS (tier 2)
-- Mac Catalyst (tier 2)
-- tvOS (tier 3)
-- watchOS (tier 3)
-- visionOS (tier 3)
-
-The "tiers" refer to the platform's status in the Rust ecosystem; [per the rustc book[^1]](https://doc.rust-lang.org/rustc/target-tier-policy.html):
-
-> Rust's continuous integration checks that tier 1 targets will always build and pass tests.
-> 
-> Rust's continuous integration checks that tier 2 targets will always build, but they may or may not pass tests.
-> 
-> Rust provides no guarantees about tier 3 targets; they exist in the codebase, but may or may not build.
-
-[^1]: Quoted exactly, but reordered for clarity.
-
-As such, please take note that `minijinja-xcframework`, itself, inherits those guarantees on a platform-by-platform basis.
-
-### Module Verification
-
-The build process includes automatic Clang module verification to ensure proper modularization:
-
-- A `module.modulemap` file is included with each platform build
-- After building and creating fat binaries, the build system runs `just verify-modules`
-- Verification uses Clang's `-fmodules` and `-fmodules-validate-system-headers` flags
-- Each platform's module is tested by attempting to import it in a test Objective-C file
-
-You can run module verification separately:
-
-```bash
-# Verify all modules (after building)
-just verify-modules
-
-# Verify specific platform modules
-just verify-ios-modules
-just verify-macos-modules
-just verify-catalyst-modules
-just verify-tvos-modules
-just verify-watchos-modules
-just verify-visionos-modules
+```sh
+MINIJINJA_REPOSITORY=https://github.com/plx/minijinja.git \
+MINIJINJA_REF=2.24.0 \
+MINIJINJA_EXPECTED_COMMIT=0ca749f7ba507514fa6b052c74130ae6ae472e03 \
+just build
 ```
 
-This ensures that the headers are properly modularized and can be imported from Swift and Objective-C code.
+`MINIJINJA_SOURCE_DIR` may point at an existing local checkout. Its `HEAD` must
+match `MINIJINJA_EXPECTED_COMMIT`. An empty expected commit opts out of that
+guard for local experiments; release CI never does.
 
-### Future Directions
+Useful focused commands include:
 
-*Eventually* this repository may gain a "local" Swift package that:
+```sh
+just configuration
+just build-slices macos
+just create-xcframework
+just verify
+just package
+just lint
+just test-module
+```
 
-- imports the framework as a module
-- runs a suite of basic unit tests against it
+## Binary contract
 
-Until then, users of `minijinja-xcframework` should take care to prepare their own test suites to ensure proper functionality.
+The release asset is `MiniJinjaC.xcframework.zip`, containing
+`MiniJinjaC.xcframework`. SwiftPM clients use:
+
+```swift
+.binaryTarget(
+  name: "MiniJinjaC",
+  url: "https://github.com/plx/minijinja-xcframework/releases/download/minijinja-2.24.0-1/MiniJinjaC.xcframework.zip",
+  checksum: "<value from the release>"
+)
+```
+
+Source targets depend on `MiniJinjaC` and write `import MiniJinjaC`. Every slice
+contains:
+
+- `libMiniJinjaC.a`
+- the upstream `minijinja.h`
+- `module.modulemap`
+
+The XCFramework root also contains `Licenses/` with MiniJinja's Apache-2.0
+license, full notices from every linked Cargo dependency, and the copyright and
+license documents for both pinned Rust runtimes. These files travel inside the
+SwiftPM-downloaded archive. Release assets additionally include the exact
+Cargo.lock and an SPDX SBOM.
+
+The bundle deliberately contains no API notes. Functions, enum values, pointer
+optionality, and ownership all retain their raw Clang-imported representation.
+The higher-level Swift target owns every source-level refinement.
+
+## Platforms and architectures
+
+| Platform | Minimum | Device | Simulator |
+| --- | ---: | --- | --- |
+| macOS | 12.0 | arm64, x86_64 | — |
+| iOS | 15.0 | arm64 | arm64, x86_64 |
+| Mac Catalyst | 15.0 | arm64, x86_64 | — |
+| tvOS | 15.0 | arm64 | arm64, x86_64 |
+| watchOS | 8.0 | arm64 (26.0+), arm64_32, armv7k | arm64, x86_64 |
+| visionOS | 1.0 | arm64 | arm64 |
+
+macOS, iOS, and Catalyst use prebuilt standard libraries from pinned stable
+Rust. The remaining targets use the pinned nightly compiler with
+`-Zbuild-std`; this also supplies x86_64 and older watchOS targets that Rust does
+not distribute as prebuilt components. Rust defines the newer watch device
+`arm64` target with a watchOS 26 floor; watchOS 8–25 devices use the included
+`arm64_32` or `armv7k` slices.
+
+The feature set augments the C ABI crate's defaults and its
+`loader,custom_syntax,fuel` dependency features with `unicode`, `json`,
+`urlencode`, `speedups`, and `loop_controls`. Features are enabled through
+Cargo's command line; upstream manifests are never patched.
+
+## Verification
+
+`just verify` checks more than module-map syntax:
+
+1. every thin archive has its declared architecture;
+2. all 68 expected C ABI functions are exported by every architecture;
+3. Clang imports the module for every target triple and SDK;
+4. Swift imports raw functions and `MJ_*` enum constants for every configured
+   target triple, including arm64_32 and armv7k watchOS devices;
+5. a host Swift executable links the static library and renders a template;
+6. `MiniJinjaEvaluation` consumes the completed XCFramework as a local SwiftPM
+   binary target.
+
+The symbol manifest intentionally makes an upstream ABI change fail loudly.
+Update `config/required-symbols.txt`, smoke tests, and the Swift wrapper together
+when the C header changes.
+
+## Packaging and provenance
+
+`just package` normalizes archive timestamps to the source commit time and uses
+a metadata-free, sorted zip input. On the same Xcode/Rust environment this makes
+the package reproducible. The `output` directory contains:
+
+- `MiniJinjaC.xcframework.zip`
+- SHA-256 and SwiftPM checksum files plus `MiniJinjaC.checksums.json`
+- `MiniJinjaC.build-info.json` with source, toolchain, feature, SDK, deployment,
+  and architecture data
+- the exact dependency graph in `MiniJinjaC.Cargo.lock`
+
+The XCFramework itself embeds redistribution notices under `Licenses/`; they
+are therefore present for direct downloads and SwiftPM consumers rather than
+only on the GitHub release page.
+
+Release CI additionally creates an SPDX JSON SBOM and GitHub artifact
+attestations for both build provenance and the SBOM. With GitHub CLI installed,
+a downloaded release can be verified using:
+
+```sh
+gh attestation verify MiniJinjaC.xcframework.zip \
+  --repo plx/minijinja-xcframework
+shasum -a 256 -c MiniJinjaC.xcframework.zip.sha256
+```
+
+Source tags and binary-artifact tags have independent namespaces. Releases use
+`minijinja-<source-version>-<artifact-revision>`; the first 2.24.0 artifact is
+therefore `minijinja-2.24.0-1`. This leaves historical `v<source-version>` tags
+untouched and permits a new artifact revision without moving a published tag.
+The workflow refuses to publish through an existing tag unless that tag points
+at the exact pipeline commit being run; select the next artifact revision when
+the pipeline changes.
+
+The scheduled release workflow checks upstream daily and only builds when the
+latest upstream artifact revision is absent here. Artifact-tag pushes and manual
+dispatches use the same build, verification, SBOM, attestation, and release
+path. All third-party GitHub Actions are pinned to full commit SHAs.

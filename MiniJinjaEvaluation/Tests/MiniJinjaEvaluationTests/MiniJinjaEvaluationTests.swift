@@ -31,12 +31,12 @@ func canWeCreateMJBools() {
 @Test
 func canWeCallMJFunctions() {
   withTemporaryMJValue(mj_value_new_none()) {
-    #expect(mj_value_get_kind($0) == .noValue)
+    #expect(mj_value_get_kind($0) == MJ_VALUE_KIND_NONE)
   }
   withTemporaryMJValue(mj_value_new_undefined()) {
-    #expect(mj_value_get_kind($0) == .undefined)
+    #expect(mj_value_get_kind($0) == MJ_VALUE_KIND_UNDEFINED)
   }
   withTemporaryMJValue(mj_value_new_list()) {
-    #expect(mj_value_get_kind($0) == .sequence)
+    #expect(mj_value_get_kind($0) == MJ_VALUE_KIND_SEQ)
   }
 }

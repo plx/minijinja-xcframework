@@ -1,0 +1,62 @@
+name: XCFramework CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: xcframework-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and verify all Apple slices
+    runs-on: macos-26
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Check out build repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install just
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
+
+      - name: Check module import contract
+        run: just test-module
+
+      - name: Prepare toolchains and source
+        run: |
+          just clean
+          just bootstrap
+          just prepare
+
+      - name: Restore Rust build cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: build/cargo-target
+          key: minijinja-cabi-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('config/apple-targets.txt', 'scripts/build-slices.sh', 'scripts/common.sh', 'rust-toolchain.toml') }}
+
+      - name: Build, verify, and package
+        run: |
+          just build-slices
+          just create-xcframework
+          just verify
+          just package
+
+      - name: Upload verified package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: MiniJinjaC-ci
+          if-no-files-found: error
+          path: |
+            output/MiniJinjaC.build-info.json
+            output/MiniJinjaC.checksums.json
+            output/MiniJinjaC.xcframework.zip
+            output/MiniJinjaC.xcframework.zip.sha256
+            output/MiniJinjaC.xcframework.zip.swiftpm-checksum

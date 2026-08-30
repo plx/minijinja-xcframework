@@ -1,0 +1,18 @@
+# id|xcframework group|Rust target|Clang target|SDK|archive architecture|deployment environment|minimum|toolchain
+macos-arm64|macos|aarch64-apple-darwin|arm64-apple-macos12.0|macosx|arm64|MACOSX_DEPLOYMENT_TARGET|12.0|stable
+macos-x86_64|macos|x86_64-apple-darwin|x86_64-apple-macos12.0|macosx|x86_64|MACOSX_DEPLOYMENT_TARGET|12.0|stable
+ios-arm64|ios|aarch64-apple-ios|arm64-apple-ios15.0|iphoneos|arm64|IPHONEOS_DEPLOYMENT_TARGET|15.0|stable
+ios-simulator-arm64|ios-simulator|aarch64-apple-ios-sim|arm64-apple-ios15.0-simulator|iphonesimulator|arm64|IPHONEOS_DEPLOYMENT_TARGET|15.0|stable
+ios-simulator-x86_64|ios-simulator|x86_64-apple-ios|x86_64-apple-ios15.0-simulator|iphonesimulator|x86_64|IPHONEOS_DEPLOYMENT_TARGET|15.0|stable
+maccatalyst-arm64|maccatalyst|aarch64-apple-ios-macabi|arm64-apple-ios15.0-macabi|macosx|arm64|IPHONEOS_DEPLOYMENT_TARGET|15.0|stable
+maccatalyst-x86_64|maccatalyst|x86_64-apple-ios-macabi|x86_64-apple-ios15.0-macabi|macosx|x86_64|IPHONEOS_DEPLOYMENT_TARGET|15.0|stable
+tvos-arm64|tvos|aarch64-apple-tvos|arm64-apple-tvos15.0|appletvos|arm64|TVOS_DEPLOYMENT_TARGET|15.0|nightly
+tvos-simulator-arm64|tvos-simulator|aarch64-apple-tvos-sim|arm64-apple-tvos15.0-simulator|appletvsimulator|arm64|TVOS_DEPLOYMENT_TARGET|15.0|nightly
+tvos-simulator-x86_64|tvos-simulator|x86_64-apple-tvos|x86_64-apple-tvos15.0-simulator|appletvsimulator|x86_64|TVOS_DEPLOYMENT_TARGET|15.0|nightly
+watchos-arm64|watchos|aarch64-apple-watchos|arm64-apple-watchos26.0|watchos|arm64|WATCHOS_DEPLOYMENT_TARGET|26.0|nightly
+watchos-arm64_32|watchos|arm64_32-apple-watchos|arm64_32-apple-watchos8.0|watchos|arm64_32|WATCHOS_DEPLOYMENT_TARGET|8.0|nightly
+watchos-armv7k|watchos|armv7k-apple-watchos|armv7k-apple-watchos8.0|watchos|armv7k|WATCHOS_DEPLOYMENT_TARGET|8.0|nightly
+watchos-simulator-arm64|watchos-simulator|aarch64-apple-watchos-sim|arm64-apple-watchos8.0-simulator|watchsimulator|arm64|WATCHOS_DEPLOYMENT_TARGET|8.0|nightly
+watchos-simulator-x86_64|watchos-simulator|x86_64-apple-watchos-sim|x86_64-apple-watchos8.0-simulator|watchsimulator|x86_64|WATCHOS_DEPLOYMENT_TARGET|8.0|nightly
+visionos-arm64|visionos|aarch64-apple-visionos|arm64-apple-xros1.0|xros|arm64|XROS_DEPLOYMENT_TARGET|1.0|nightly
+visionos-simulator-arm64|visionos-simulator|aarch64-apple-visionos-sim|arm64-apple-xros1.0-simulator|xrsimulator|arm64|XROS_DEPLOYMENT_TARGET|1.0|nightly
