@@ -5,11 +5,11 @@ import PackageDescription
 let package = Package(
   name: "MiniJinjaEvaluation",
   platforms: [
-    .iOS(.v26),
-    .macOS(.v26),
-    .tvOS(.v26),
-    .watchOS(.v26),
-    .visionOS(.v26)
+    .iOS(.v15),
+    .macOS(.v12),
+    .tvOS(.v15),
+    .watchOS(.v8),
+    .visionOS(.v1)
   ],
   products: [
     .library(
@@ -24,7 +24,7 @@ let package = Package(
     // the XCFramework with `just build` immediately updates this package
     .binaryTarget(
       name: "MiniJinjaC",
-      path: "../output/minijinja.xcframework"
+      path: "../output/MiniJinjaC.xcframework"
     ),
     
     // wrapper & wrapper test:
@@ -39,4 +39,3 @@ let package = Package(
   ],
   swiftLanguageModes: [.v6]
 )
-

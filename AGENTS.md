@@ -1,22 +1,20 @@
 # Guide for Agents
 
-This repository exists to facilitate the development of [hdxl-swift-minijinja](https://github.com/plx/hdxl-swift-minijinja), which is (will be) a Swift wrapper around the Rust-language templating engine [`minijinja`](https://github.com/mitsuhiko/minijinja); the wrapping will be done via `minijinja`'s C-ABI subtarget, which exposes its functionality in a C-compatible form.
+This repository produces the `MiniJinjaC` binary dependency for
+`hdxl-swift-minijinja`. Preserve these contracts:
 
-As such, the structure of this repository is like so:
+- The source repository, ref, exact commit, stable Rust, and nightly Rust are
+  pinned in `scripts/common.sh` and documented in `README.md`.
+- `config/apple-targets.txt` is the source of truth for target triples, SDKs,
+  architectures, deployment floors, and toolchain selection.
+- The archive, XCFramework, SwiftPM target, and Clang module are named
+  `MiniJinjaC`; the static library is `libMiniJinjaC.a`.
+- Do not ship API notes. The Swift wrapper compiles against the raw Clang import,
+  including `MJ_*` constants, function names, and pointer optionality.
+- Do not edit the fetched MiniJinja checkout. Static library output and optional
+  engine features are requested through `cargo rustc`.
+- Any upstream C ABI change must update `config/required-symbols.txt`, import
+  smoke tests, and the Swift wrapper together.
 
-- `justfile`: the justfile contains our "build script", structured as a sequence of commands:
-  - cleaning and fetching the upstream `minijinja` source code
-  - building `minijinja` for each supported platform
-  - creating universal (fat) binaries for each platform
-  - verifying that the headers are properly modularized
-  - creating the final XCFramework
-  - packaging the XCFramework for distribution
-  - updating the `README.md` with the latest version and checksum
-- `.github/workflows/build-release.yml`: a Github Actions workflow that automatically builds and publishes new releases whenever a new `minijinja` version is released
-
-That's the intent, but but we're not quite there—still getting things fully-working.
-
-# Notes
-
-- As of this summer, Apple has moved to uniform, year-based versions for all platforms and tools: iOS 18 is followed by iOS 26, visionOS 2 is followed by visionOS 26, the latest Xcode is 26, and so on; to enable these versions in a Package.swift file requires using the 6.2 versions of the tooling (`// swift-tools-version: 6.2`).
-- The build always enables minijinja's `unicode` feature, which provides Unicode support for identifiers, attribute names, and Unicode-aware case-insensitive sorting. This is the right choice for Swift interoperability and international use.
+Run `just lint` for static checks and `just build` for the complete build,
+cross-target verification, host execution test, SwiftPM test, and package.

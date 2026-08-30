@@ -1,150 +1,261 @@
-name: Build and Release XCFramework
+name: Build and release MiniJinjaC
 
 on:
   push:
     tags:
-      - 'v*'
+      - "minijinja-[0-9]*"
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
     inputs:
-      version:
-        description: 'minijinja version to build (without v prefix)'
+      source_repository:
+        description: Git repository containing MiniJinja
         required: true
+        default: https://github.com/plx/minijinja.git
         type: string
-  schedule:
-    # Check for new releases daily at 2 AM UTC
-    - cron: '0 2 * * *'
+      source_ref:
+        description: Exact MiniJinja tag, branch, or commit to build
+        required: true
+        default: 2.24.0
+        type: string
+      expected_commit:
+        description: Required full source commit SHA
+        required: true
+        default: 0ca749f7ba507514fa6b052c74130ae6ae472e03
+        type: string
+      release_revision:
+        description: Artifact revision used in minijinja-<source-ref>-<revision>
+        required: true
+        default: "1"
+        type: string
+      publish:
+        description: Publish or update the matching GitHub release
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: xcframework-release-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
-  check-release:
+  resolve:
+    name: Resolve immutable source
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
-      should-build: ${{ steps.check.outputs.should-build }}
-      version: ${{ steps.check.outputs.version }}
+      expected-commit: ${{ steps.resolve.outputs.expected-commit }}
+      publish: ${{ steps.resolve.outputs.publish }}
+      release-tag: ${{ steps.resolve.outputs.release-tag }}
+      should-build: ${{ steps.resolve.outputs.should-build }}
+      source-ref: ${{ steps.resolve.outputs.source-ref }}
+      source-repository: ${{ steps.resolve.outputs.source-repository }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Check for new minijinja release
-        id: check
+      - name: Resolve request
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+          INPUT_RELEASE_REVISION: ${{ inputs.release_revision }}
+          INPUT_SOURCE_REF: ${{ inputs.source_ref }}
+          INPUT_SOURCE_REPOSITORY: ${{ inputs.source_repository }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger: always build with specified version
-            echo "Manual trigger detected, using version: ${{ github.event.inputs.version }}"
-            echo "should-build=true" >> $GITHUB_OUTPUT
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            # Scheduled trigger: check for new releases
-            LATEST_RELEASE=$(curl -s https://api.github.com/repos/mitsuhiko/minijinja/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          set -euo pipefail
 
-            # Check if we already have this release
-            if git ls-remote --tags origin | grep -q "v$LATEST_RELEASE"; then
-              echo "Release v$LATEST_RELEASE already exists"
-              echo "should-build=false" >> $GITHUB_OUTPUT
-            else
-              echo "New release found: v$LATEST_RELEASE"
-              echo "should-build=true" >> $GITHUB_OUTPUT
-              echo "version=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+          repository=https://github.com/plx/minijinja.git
+          expected_commit=
+          publish=false
+          release_tag=
+          should_build=true
+
+          case "$GITHUB_EVENT_NAME" in
+            push)
+              release_tag=$GITHUB_REF_NAME
+              source_ref=${release_tag#minijinja-}
+              release_revision=${source_ref##*-}
+              source_ref=${source_ref%"-$release_revision"}
+              if [ -z "$source_ref" ] || ! printf '%s' "$release_revision" | grep -Eq '^[1-9][0-9]*$'; then
+                printf 'Release tags must be minijinja-<source-ref>-<positive-revision>: %s\n' "$release_tag" >&2
+                exit 1
+              fi
+              publish=true
+              ;;
+            schedule)
+              repository=https://github.com/mitsuhiko/minijinja.git
+              source_ref=$(gh api repos/mitsuhiko/minijinja/releases/latest --jq .tag_name)
+              release_tag="minijinja-${source_ref}-1"
+              publish=true
+              if gh release view --repo "$GITHUB_REPOSITORY" "$release_tag" >/dev/null 2>&1; then
+                should_build=false
+              fi
+              ;;
+            workflow_dispatch)
+              repository=$INPUT_SOURCE_REPOSITORY
+              source_ref=$INPUT_SOURCE_REF
+              expected_commit=$INPUT_EXPECTED_COMMIT
+              publish=$INPUT_PUBLISH
+              if ! printf '%s' "$INPUT_RELEASE_REVISION" | grep -Eq '^[1-9][0-9]*$'; then
+                printf 'release_revision must be a positive integer\n' >&2
+                exit 1
+              fi
+              release_tag="minijinja-${source_ref}-${INPUT_RELEASE_REVISION}"
+              ;;
+            *)
+              printf 'Unsupported event: %s\n' "$GITHUB_EVENT_NAME" >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$expected_commit" ]; then
+            expected_commit=$(git ls-remote "$repository" "refs/tags/$source_ref^{}" | awk 'NR == 1 { print $1 }')
+            if [ -z "$expected_commit" ]; then
+              expected_commit=$(git ls-remote "$repository" "refs/tags/$source_ref" | awk 'NR == 1 { print $1 }')
             fi
           fi
 
-  build-xcframework:
-    needs: check-release
-    if: needs.check-release.outputs.should-build == 'true' || github.event_name == 'push'
-    runs-on: macos-latest
+          if ! printf '%s' "$expected_commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            printf 'Could not resolve %s at %s to a full commit SHA\n' "$repository" "$source_ref" >&2
+            exit 1
+          fi
+
+          if ! printf '%s' "$release_tag" | grep -Eq '^minijinja-[A-Za-z0-9._-]+-[1-9][0-9]*$'; then
+            printf 'Unsafe artifact release tag: %s\n' "$release_tag" >&2
+            exit 1
+          fi
+
+          {
+            printf 'expected-commit=%s\n' "$expected_commit"
+            printf 'publish=%s\n' "$publish"
+            printf 'release-tag=%s\n' "$release_tag"
+            printf 'should-build=%s\n' "$should_build"
+            printf 'source-ref=%s\n' "$source_ref"
+            printf 'source-repository=%s\n' "$repository"
+          } >>"$GITHUB_OUTPUT"
+
+  build:
+    name: Build, verify, and attest
+    needs: resolve
+    if: needs.resolve.outputs.should-build == 'true'
+    runs-on: macos-26
+    timeout-minutes: 120
     permissions:
-      contents: write  # Required to create releases
+      attestations: write
+      contents: write
+      id-token: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      MINIJINJA_EXPECTED_COMMIT: ${{ needs.resolve.outputs.expected-commit }}
+      MINIJINJA_REF: ${{ needs.resolve.outputs.source-ref }}
+      MINIJINJA_REPOSITORY: ${{ needs.resolve.outputs.source-repository }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out build repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
 
-      - name: Install Rust toolchains
-        run: just install-toolchains
-
-      - name: Determine version
-        id: version
+      - name: Prepare toolchains and source
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            # Extract version from tag
-            VERSION=${GITHUB_REF#refs/tags/v}
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ needs.check-release.outputs.version }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          just clean
+          just bootstrap
+          just prepare
 
-      - name: Build XCFramework
-        run: just build
+      - name: Restore Rust build cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: build/cargo-target
+          key: minijinja-cabi-${{ runner.os }}-${{ runner.arch }}-${{ needs.resolve.outputs.expected-commit }}-${{ hashFiles('config/apple-targets.txt', 'scripts/build-slices.sh', 'scripts/common.sh') }}
+
+      - name: Build and verify XCFramework
+        run: |
+          just build-slices
+          just create-xcframework
+          just verify
+          just package
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          path: build/source
+          format: spdx-json
+          output-file: output/MiniJinjaC.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: output/MiniJinjaC.xcframework.zip
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@51e74621a501c89df81fc1391c5a8f4cfc9fab2f # v3
+        with:
+          subject-path: output/MiniJinjaC.xcframework.zip
+          sbom-path: output/MiniJinjaC.spdx.json
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: MiniJinjaC-${{ needs.resolve.outputs.source-ref }}
+          if-no-files-found: error
+          path: |
+            output/MiniJinjaC.Cargo.lock
+            output/MiniJinjaC.build-info.json
+            output/MiniJinjaC.checksums.json
+            output/MiniJinjaC.spdx.json
+            output/MiniJinjaC.xcframework.zip
+            output/MiniJinjaC.xcframework.zip.sha256
+            output/MiniJinjaC.xcframework.zip.swiftpm-checksum
+
+      - name: Publish GitHub release
+        if: needs.resolve.outputs.publish == 'true'
         env:
-          MINIJINJA_VERSION: ${{ steps.version.outputs.version }}
-      
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcframework
-          path: output/minijinja.xcframework.zip
-      
-      - name: Calculate checksum
-        id: checksum
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release-tag }}
+          SOURCE_REF: ${{ needs.resolve.outputs.source-ref }}
         run: |
-          cd output
-          CHECKSUM=$(swift package compute-checksum minijinja.xcframework.zip)
-          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
-          echo "Checksum: $CHECKSUM"
-      
-      - name: Create Release
-        if: github.event_name != 'workflow_dispatch' || github.event.inputs.version != 'main'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: minijinja XCFramework v${{ steps.version.outputs.version }}
-          body: |
-            ## minijinja XCFramework v${{ steps.version.outputs.version }}
+          set -euo pipefail
+          notes_file=$(mktemp "${RUNNER_TEMP}/minijinja-release-notes.XXXXXX")
+          ./scripts/release-notes.sh "$SOURCE_REF" "$RELEASE_TAG" "$GITHUB_REPOSITORY" >"$notes_file"
 
-            This release packages [minijinja v${{ steps.version.outputs.version }}](https://github.com/mitsuhiko/minijinja/releases/tag/${{ steps.version.outputs.version }}) as an XCFramework.
+          if git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            git fetch --force --no-tags origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            tag_commit=$(git rev-list -n 1 "$RELEASE_TAG")
+            build_commit=$(git rev-parse HEAD)
+            if [ "$tag_commit" != "$build_commit" ]; then
+              printf 'Refusing stale release tag %s: target is %s, build commit is %s. Use the next artifact revision.\n' \
+                "$RELEASE_TAG" "$tag_commit" "$build_commit" >&2
+              exit 1
+            fi
+          fi
 
-            ### Installation
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "MiniJinjaC $SOURCE_REF" --notes-file "$notes_file"
+          else
+            case "$SOURCE_REF" in
+              *alpha* | *beta* | *-rc*)
+                gh release create "$RELEASE_TAG" \
+                  --target "$GITHUB_SHA" \
+                  --title "MiniJinjaC $SOURCE_REF" \
+                  --notes-file "$notes_file" \
+                  --prerelease
+                ;;
+              *)
+                gh release create "$RELEASE_TAG" \
+                  --target "$GITHUB_SHA" \
+                  --title "MiniJinjaC $SOURCE_REF" \
+                  --notes-file "$notes_file"
+                ;;
+            esac
+          fi
 
-            Add to your `Package.swift`:
-
-            ```swift
-            .binaryTarget(
-                name: "minijinja",
-                url: "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/minijinja.xcframework.zip",
-                checksum: "${{ steps.checksum.outputs.checksum }}"
-            )
-            ```
-
-            ### Supported Platforms
-
-            #### Tier 1/2 Platforms (Stable Rust)
-            - iOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-            - macOS 26.0+ (universal arm64/x86_64)
-            - Mac Catalyst 26.0+ (universal arm64/x86_64)
-
-            #### Tier 3 Platforms ([Experimental](#build-information))
-            - tvOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-            - watchOS 26.0+ (arm64 device, universal arm64/x86_64 simulator)
-            - visionOS 26.0+ (arm64 device, arm64 simulator)
-
-            ### Features
-            - Static library linking for optimal binary size
-            - Debug symbols (dSYMs) embedded in XCFramework for crash symbolication
-            - Unicode support enabled (unicode identifiers, attribute names, and Unicode-aware sorting)
-
-            ### Build Information
-
-            This XCFramework is built using a hybrid toolchain approach:
-
-            - **Tier 1/2 platforms** (iOS, macOS, Catalyst) are built with **Rust stable 1.90.0**
-            - **Tier 3 platforms** (tvOS, watchOS, visionOS) are built with **Rust nightly** using the `-Zbuild-std` flag
-
-            Tier 3 platforms are labeled "experimental" because:
-            - They use nightly Rust (though nightly is generally stable for correctness)
-            - They require building the Rust standard library from source
-            - They receive less real-world testing in the Rust ecosystem
-
-            All platforms produce fully functional, safe binaries suitable for production use.
-          files: output/minijinja.xcframework.zip
-          token: ${{ secrets.GITHUB_TOKEN }}
+          gh release upload "$RELEASE_TAG" --clobber \
+            output/MiniJinjaC.Cargo.lock \
+            output/MiniJinjaC.build-info.json \
+            output/MiniJinjaC.checksums.json \
+            output/MiniJinjaC.spdx.json \
+            output/MiniJinjaC.xcframework.zip \
+            output/MiniJinjaC.xcframework.zip.sha256 \
+            output/MiniJinjaC.xcframework.zip.swiftpm-checksum
